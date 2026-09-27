@@ -13,7 +13,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ============ YOUR FIREBASE CONFIG ============ */
 const firebaseConfig = {
   apiKey: "AIzaSyCXOyZ9cSZNRQhkcvDEoGJIPNOfnB5-V84",
   authDomain: "momtaj-college.firebaseapp.com",
@@ -25,7 +24,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 window.db = db;
 window.fbFns = { doc, getDoc, setDoc, onSnapshot, serverTimestamp };
 window.dispatchEvent(new Event('firebase-ready'));
@@ -102,24 +100,25 @@ main{padding:16px;max-width:1100px;margin:0 auto;width:100%;flex:1}
 .student-info .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .student-info .meta{font-size:12px;color:var(--muted);margin-top:2px}
 .row-actions{display:flex;gap:6px}
-.att-toggle{width:52px;height:32px;border-radius:16px;background:#cbd5e1;position:relative;transition:background .25s;flex-shrink:0;cursor:pointer}
-.att-toggle.on{background:var(--success)}
-.att-toggle::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
-.att-toggle.on::after{transform:translateX(20px)}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--card);border:1.5px solid var(--border);color:var(--muted)}
 .chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .chip .count{background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;font-size:11px;margin-left:5px}
 .chip:not(.active) .count{background:var(--bg)}
-.table-wrap{overflow:auto;border-radius:12px;border:1.5px solid var(--border);max-height:60vh}
+.table-wrap{overflow:auto;border-radius:12px;border:1.5px solid var(--border);max-height:70vh}
 table{border-collapse:collapse;width:100%;font-size:12.5px}
 th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
 th{background:var(--primary);color:#fff;font-weight:600;position:sticky;top:0;z-index:2}
 td{background:var(--card)}
-td.name-col{text-align:left;font-weight:600}
+td.name-col{text-align:left;font-weight:600;position:sticky;left:0;background:var(--card);z-index:1}
 .cell-P{color:var(--success);font-weight:700;cursor:pointer}
 .cell-A{color:var(--danger);font-weight:700;cursor:pointer}
+.cell-empty{color:var(--muted);cursor:pointer;opacity:.4}
 .today-col{background:rgba(244,180,0,.15)!important;font-weight:700}
+.today-col-h{background:var(--accent)!important;color:#000!important}
+tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px;padding:10px;background:var(--bg);border-radius:10px}
+.legend span b{display:inline-block;margin-right:4px}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
 .modal{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:460px;box-shadow:var(--shadow-lg);max-height:90vh;overflow:auto}
 .modal h3{font-size:18px;font-weight:700;margin-bottom:16px;color:var(--primary)}
@@ -185,8 +184,7 @@ td.name-col{text-align:left;font-weight:600}
   <div class="tabs">
     <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 ড্যাশবোর্ড</button>
     <button class="tab" data-tab="students" onclick="switchTab('students')">👥 শিক্ষার্থী</button>
-    <button class="tab" data-tab="attendance" onclick="switchTab('attendance')">📅 হাজিরা</button>
-    <button class="tab" data-tab="monthly" onclick="switchTab('monthly')">🗓️ মাসিক</button>
+    <button class="tab" data-tab="monthly" onclick="switchTab('monthly')">🗓️ হাজিরা</button>
     <button class="tab" data-tab="results" onclick="switchTab('results')">🏆 ফলাফল</button>
     <button class="tab" data-tab="notice" onclick="switchTab('notice')">📢 নোটিশ</button>
   </div>
@@ -218,26 +216,23 @@ td.name-col{text-align:left;font-weight:600}
       </div>
     </section>
 
-    <section class="view" id="view-attendance">
-      <div class="card">
-        <h2>📅 হাজিরা — <span id="attDate"></span></h2>
-        <div class="toolbar">
-          <input type="date" id="attDatePicker" style="flex:1;min-width:160px" onchange="changeAttDate()">
-          <button class="btn btn-success btn-sm" onclick="bulkMark('present')">✅ সবাই</button>
-          <button class="btn btn-danger btn-sm" onclick="bulkMark('absent')">❌ সবাই</button>
-        </div>
-        <div id="attList"></div>
-      </div>
-    </section>
-
     <section class="view" id="view-monthly">
       <div class="card">
-        <h2>🗓️ মাসিক হাজিরা</h2>
+        <h2>🗓️ হাজিরা — <span id="monthTitle"></span></h2>
         <div class="toolbar">
-          <select id="monthSelect" onchange="renderMonthly()" style="flex:1"></select>
-          <button class="btn btn-success btn-sm" onclick="exportMonthly()">📥 Excel</button>
+          <select id="monthSelect" onchange="renderMonthly()" style="flex:1;min-width:180px"></select>
+          <button class="btn btn-success btn-sm" onclick="markToday('present')">✅ আজ সবাই উপস্থিত</button>
+          <button class="btn btn-danger btn-sm" onclick="markToday('absent')">❌ আজ সবাই অনুপস্থিত</button>
+          <button class="btn btn-info btn-sm" onclick="exportMonthly()">📥 Excel</button>
         </div>
-        <div class="table-wrap" id="monthlyTable"></div>
+        <div class="legend">
+          <span><b style="color:var(--success)">✓</b> উপস্থিত</span>
+          <span><b style="color:var(--danger)">✗</b> অনুপস্থিত</span>
+          <span><b style="color:var(--muted)">-</b> চিহ্নিত হয়নি</span>
+          <span>💡 যেকোনো সেলে ক্লিক করে অবস্থা পরিবর্তন করুন</span>
+          <span>🟡 হলুদ = আজকের তারিখ</span>
+        </div>
+        <div class="table-wrap" id="monthlyTable" style="margin-top:10px"></div>
       </div>
     </section>
 
@@ -268,11 +263,9 @@ let students = [], attendance = {}, results = {}, notices = [];
 let subNames = ['বিষয় 1','বিষয় 2','বিষয় 3','বিষয় 4','বিষয় 5','বিষয় 6','বিষয় 7','বিষয় 8','বিষয় 9','বিষয় 10','বিষয় 11','বিষয় 12','বিষয় 13'];
 let filter = 'all';
 let trendChart = null;
-let attDateKey = todayKey();
 let fbReady = false;
 let unsubListener = null;
 let pushTimer = null;
-let isRemoteUpdate = false;
 const DEFAULT_PASS = 'admin123';
 
 window.addEventListener('firebase-ready', ()=>{ fbReady = true; checkCloud(); });
@@ -332,17 +325,14 @@ function startLiveSync(){
   unsubListener = window.fbFns.onSnapshot(cloudRef(), (snap)=>{
     if (!snap.exists()) return;
     const d = snap.data();
-    isRemoteUpdate = true;
     students = d.students || [];
     attendance = d.attendance || {};
     results = d.results || {};
     notices = d.notices || [];
     subNames = d.subNames || subNames;
-    isRemoteUpdate = false;
     const active = document.querySelector('.view.active')?.id;
     if (active === 'view-dashboard') renderDashboard();
     if (active === 'view-students') renderStudents();
-    if (active === 'view-attendance') renderAttendance();
     if (active === 'view-monthly') renderMonthly();
     if (active === 'view-notice') renderNotices();
   });
@@ -350,7 +340,6 @@ function startLiveSync(){
 
 function todayKey(d=new Date()){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function bn(n){ return String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]); }
-function fmtDate(k){ const [y,m,d]=k.split('-'); return bn(d)+'/'+bn(m)+'/'+bn(y); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function toast(msg,type='success'){
   const t=document.createElement('div');
@@ -405,7 +394,6 @@ function switchTab(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
   if (name==='dashboard') renderDashboard();
   if (name==='students')  renderStudents();
-  if (name==='attendance')renderAttendance();
   if (name==='monthly')   initMonthly();
   if (name==='results')   renderResults();
   if (name==='notice')    renderNotices();
@@ -413,7 +401,7 @@ function switchTab(name){
 
 function renderDashboard(){
   const t = students.length;
-  const today = attendance[attDateKey] || {};
+  const today = attendance[todayKey()] || {};
   let p=0, a=0;
   students.forEach((_,i)=>{ if (today[i]==='A') a++; else p++; });
   document.getElementById('stTotal').textContent = bn(t);
@@ -452,7 +440,7 @@ function setFilter(f){
 function renderStudents(){
   const q = (document.getElementById('searchBox').value||'').toLowerCase().trim();
   const list = document.getElementById('studentList');
-  const today = attendance[attDateKey] || {};
+  const today = attendance[todayKey()] || {};
   let present=0, absent=0;
   students.forEach((_,i)=>{ if (today[i]==='A') absent++; else present++; });
   document.getElementById('cAll').textContent = bn(students.length);
@@ -535,46 +523,7 @@ function deleteStudent(i){
   toast('ডিলিট হয়েছে','info');
 }
 
-function renderAttendance(){
-  document.getElementById('attDate').textContent = fmtDate(attDateKey);
-  document.getElementById('attDatePicker').value = attDateKey;
-  const rec = attendance[attDateKey] || {};
-  const list = document.getElementById('attList');
-  if (!students.length){
-    list.innerHTML = '<div class="empty"><div class="icon">👥</div><p>শিক্ষার্থী যোগ করুন</p></div>';
-    return;
-  }
-  list.innerHTML = students.map((s,i)=>{
-    const status = rec[i] || 'P';
-    const isOn = status !== 'A';
-    return `<div class="student-row ${isOn?'present':'absent'}">
-      <div class="avatar ${isOn?'':'absent'}">${escapeHtml((s.name||'?').charAt(0))}</div>
-      <div class="student-info">
-        <div class="name">${escapeHtml(s.name)}</div>
-        <div class="meta">রোল: ${escapeHtml(s.roll||'-')}</div>
-      </div>
-      <div class="att-toggle ${isOn?'on':''}" onclick="toggleAtt(${i})"></div>
-    </div>`;
-  }).join('');
-}
-function toggleAtt(i){
-  if(!attendance[attDateKey]) attendance[attDateKey]={};
-  const cur = attendance[attDateKey][i];
-  attendance[attDateKey][i] = cur === 'A' ? 'P' : 'A';
-  saveAll(); renderAttendance(); renderDashboard();
-}
-function bulkMark(type){
-  if(!confirm('নিশ্চিত?')) return;
-  if(!attendance[attDateKey]) attendance[attDateKey]={};
-  students.forEach((_,i)=>{ attendance[attDateKey][i] = type==='present'?'P':'A'; });
-  saveAll(); renderAttendance(); renderDashboard();
-  toast('✅ সম্পন্ন','success');
-}
-function changeAttDate(){
-  attDateKey = document.getElementById('attDatePicker').value;
-  renderAttendance();
-}
-
+/* ================= MONTHLY (Now the only attendance UI) ================= */
 function initMonthly(){
   const sel = document.getElementById('monthSelect');
   const opts = []; const now = new Date();
@@ -587,24 +536,27 @@ function initMonthly(){
   sel.innerHTML = opts.join('');
   renderMonthly();
 }
+
 function renderMonthly(){
   const mk = document.getElementById('monthSelect').value;
   if (!mk) return;
   const [y,m] = mk.split('-').map(Number);
   const days = new Date(y,m,0).getDate();
-  document.getElementById('monthlyTable').innerHTML = '';
+  document.getElementById('monthTitle').textContent = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
   if (!students.length){
-    document.getElementById('monthlyTable').innerHTML = '<div class="empty"><div class="icon">📅</div><p>শিক্ষার্থী নেই</p></div>';
+    document.getElementById('monthlyTable').innerHTML = '<div class="empty"><div class="icon">📅</div><p>শিক্ষার্থী যোগ করুন</p></div>';
     return;
   }
   const today = new Date();
   const isCurrentMonth = (today.getFullYear()===y && today.getMonth()+1===m);
-  let h = '<table><thead><tr><th>নাম</th><th>রোল</th>';
+
+  let h = '<table><thead><tr><th style="position:sticky;left:0;z-index:3;background:var(--primary)">নাম</th><th>রোল</th>';
   for (let d=1; d<=days; d++){
     const isToday = isCurrentMonth && today.getDate()===d;
-    h += `<th class="${isToday?'today-col':''}">${bn(d)}</th>`;
+    h += `<th class="${isToday?'today-col-h':''}">${bn(d)}</th>`;
   }
-  h += '<th>P</th><th>A</th><th>%</th></tr></thead><tbody>';
+  h += '<th style="background:var(--success)">P</th><th style="background:var(--danger)">A</th><th style="background:var(--accent);color:#000">%</th></tr></thead><tbody>';
+
   students.forEach((s,i)=>{
     let p=0, a=0;
     h += `<tr><td class="name-col">${escapeHtml(s.name)}</td><td>${escapeHtml(s.roll||'-')}</td>`;
@@ -613,24 +565,70 @@ function renderMonthly(){
       const st = (attendance[k]||{})[i] || '';
       if (st==='P') p++; if (st==='A') a++;
       const isToday = isCurrentMonth && today.getDate()===d;
-      h += `<td class="${st==='P'?'cell-P':st==='A'?'cell-A':''} ${isToday?'today-col':''}" onclick="toggleMonthCell('${k}',${i})">${st==='P'?'✓':st==='A'?'✗':'-'}</td>`;
+      const cls = st==='P' ? 'cell-P' : st==='A' ? 'cell-A' : 'cell-empty';
+      const sym = st==='P' ? '✓' : st==='A' ? '✗' : '-';
+      h += `<td class="${cls} ${isToday?'today-col':''}" onclick="toggleMonthCell('${k}',${i})">${sym}</td>`;
     }
     const total = p+a;
     const pct = total?Math.round(p/total*100):0;
     h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
   });
+
+  /* Totals row — how many were present/absent each day */
+  h += '<tr class="totals-row"><td class="name-col">📊 মোট</td><td>-</td>';
+  for (let d=1; d<=days; d++){
+    const k = y+'-'+m+'-'+d;
+    const rec = attendance[k] || {};
+    let p=0;
+    students.forEach((_,i)=>{ if (rec[i]==='P') p++; });
+    h += `<td>${p?bn(p):'-'}</td>`;
+  }
+  h += '<td colspan="3">-</td></tr>';
+
   h += '</tbody></table>';
   document.getElementById('monthlyTable').innerHTML = h;
 }
+
 function toggleMonthCell(k,i){
   if (!attendance[k]) attendance[k]={};
   const cur = attendance[k][i];
   if (!cur) attendance[k][i]='P';
   else if (cur==='P') attendance[k][i]='A';
   else delete attendance[k][i];
-  saveAll(); renderMonthly();
+  saveAll(); renderMonthly(); renderDashboard();
 }
 
+function markToday(type){
+  if (!confirm(`আজকের সব শিক্ষার্থীকে ${type==='present'?'উপস্থিত':'অনুপস্থিত'} চিহ্নিত করবেন?`)) return;
+  const k = todayKey();
+  if (!attendance[k]) attendance[k]={};
+  students.forEach((_,i)=>{ attendance[k][i] = type==='present'?'P':'A'; });
+  saveAll(); renderMonthly(); renderDashboard();
+  toast('✅ সম্পন্ন','success');
+}
+
+function exportMonthly(){
+  const mk = document.getElementById('monthSelect').value;
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  const rows = students.map((s,i)=>{
+    const row = {নাম:s.name, রোল:s.roll};
+    let p=0,a=0;
+    for (let d=1; d<=days; d++){
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
+      row[bn(d)] = st; if(st==='P')p++; if(st==='A')a++;
+    }
+    row['মোট P']=p; row['মোট A']=a;
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Monthly');
+  XLSX.writeFile(wb, `Hazira_${currentClass}_${mk}.xlsx`);
+  toast('✅ Excel ডাউনলোড','success');
+}
+
+/* ================= RESULTS ================= */
 function renderResults(){
   if (!students.length){
     document.getElementById('resultTable').innerHTML = '<div class="empty"><div class="icon">🏆</div><p>শিক্ষার্থী নেই</p></div>';
@@ -657,6 +655,7 @@ function renderResults(){
 function setSubName(i,v){ subNames[i]=v||('বিষয় '+(i+1)); saveAll(); }
 function setMark(i,j,v){ if(!results[i]) results[i]={}; results[i]['s'+j]=v; saveAll(); }
 
+/* ================= NOTICE ================= */
 function addNotice(){
   const t = document.getElementById('noticeInput').value.trim();
   if (!t) return toast('নোটিশ লিখুন','error');
@@ -677,28 +676,7 @@ function renderNotices(){
 }
 function deleteNotice(i){ notices.splice(i,1); saveAll(); renderNotices(); }
 
-function exportMonthly(){
-  const mk = document.getElementById('monthSelect').value;
-  const [y,m] = mk.split('-').map(Number);
-  const days = new Date(y,m,0).getDate();
-  const rows = students.map((s,i)=>{
-    const row = {নাম:s.name, রোল:s.roll};
-    let p=0,a=0;
-    for (let d=1; d<=days; d++){
-      const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
-      row[bn(d)] = st; if(st==='P')p++; if(st==='A')a++;
-    }
-    row['মোট P']=p; row['মোট A']=a;
-    return row;
-  });
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Monthly');
-  XLSX.writeFile(wb, `Monthly_${currentClass}_${mk}.xlsx`);
-  toast('✅ Excel ডাউনলোড','success');
-}
-
-/* Auto-login if session exists */
+/* ================= AUTO-LOGIN ================= */
 window.addEventListener('load', async ()=>{
   const s = localStorage.getItem('session');
   if (s && fbReady){
