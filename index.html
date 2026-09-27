@@ -30,10 +30,14 @@ window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
 <style>
-:root{--primary:#0b3d2e;--primary-light:#16543f;--accent:#f4b400;--accent-2:#ff8c00;--danger:#e63946;--success:#16a34a;--info:#2563eb;--bg:#f4f6fb;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--shadow:0 4px 24px rgba(11,61,46,.08);--shadow-lg:0 20px 40px rgba(11,61,46,.15)}
+:root{--primary:#0b3d2e;--primary-light:#16543f;--accent:#f4b400;--accent-2:#ff8c00;--danger:#e63946;--success:#16a34a;--info:#2563eb;--wa:#25D366;--purple:#7c3aed;--bg:#f4f6fb;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--shadow:0 4px 24px rgba(11,61,46,.08);--shadow-lg:0 20px 40px rgba(11,61,46,.15);--a11y-scale:1;--a11y-line:1.5}
 [data-theme="dark"]{--bg:#0a1628;--card:#132135;--text:#e2e8f0;--muted:#94a3b8;--border:#1e3a5f}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Hind Siliguri',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+html{font-size:16px}
+body{font-family:'Hind Siliguri',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:var(--a11y-line)}
+body.a11y-zoom{zoom:var(--a11y-scale,1)}
+body.a11y-zoom .a11y-panel,
+body.a11y-zoom .a11y-fab{zoom:calc(1 / var(--a11y-scale,1))}
 button{font-family:inherit;cursor:pointer;border:none;outline:none}
 input,select,textarea{font-family:inherit;font-size:15px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);width:100%}
 input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none}
@@ -45,19 +49,266 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none
 .btn-danger{background:var(--danger);color:#fff}
 .btn-success{background:var(--success);color:#fff}
 .btn-info{background:var(--info);color:#fff}
+.btn-wa{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
+.btn-purple{background:linear-gradient(135deg,var(--purple),#5b21b6);color:#fff}
 .btn-sm{padding:8px 12px;font-size:13px;border-radius:9px;width:auto}
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#0b3d2e,#16543f,#0a2342);position:relative}
-.login-wrap::before{content:'';position:absolute;inset:0;background:url('https://i.imgur.com/5AHn1Rk.png') center/cover;opacity:.15}
-.login-card{position:relative;background:var(--card);border-radius:24px;padding:36px 28px;width:100%;max-width:420px;box-shadow:var(--shadow-lg)}
-.login-logo{width:110px;height:110px;border-radius:50%;border:4px solid var(--accent);object-fit:cover;display:block;margin:0 auto 16px;background:#fff;padding:4px}
-.login-title{text-align:center;font-size:18px;font-weight:700;color:var(--primary);margin-bottom:4px}
-.login-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px}
-.login-card label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px}
-.sync-status{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--muted);margin-top:14px}
+.btn-ghost:disabled{opacity:.5;cursor:not-allowed}
+
+/* ================= ACCESSIBILITY MENU ================= */
+.a11y-fab{
+  position:fixed;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
+  width:56px;
+  height:56px;
+  border-radius:0 50% 50% 0;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  box-shadow:4px 4px 20px rgba(0,0,0,.25);
+  z-index:998;
+  cursor:pointer;
+  transition:all .3s cubic-bezier(.2,.8,.2,1);
+  border:none;
+}
+.a11y-fab:hover{
+  width:64px;
+  padding-left:6px;
+  box-shadow:6px 6px 24px rgba(0,0,0,.35);
+}
+.a11y-fab::after{
+  content:'';
+  position:absolute;
+  inset:-4px;
+  border-radius:50%;
+  border:2px solid var(--accent);
+  opacity:.5;
+  animation:pulseGlow 2.5s infinite;
+  pointer-events:none;
+}
+.a11y-fab.open{
+  left:320px;
+  transform:translateY(-50%) scale(.95);
+}
+
+.a11y-panel{
+  position:fixed;
+  top:0;
+  left:0;
+  width:340px;
+  max-width:85vw;
+  height:100vh;
+  background:linear-gradient(180deg,#dc2626 0%,#b91c1c 100%);
+  color:#fff;
+  z-index:999;
+  padding:22px 18px 30px;
+  overflow-y:auto;
+  transform:translateX(-100%);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1);
+  box-shadow:8px 0 30px rgba(0,0,0,.3);
+}
+.a11y-panel.open{transform:translateX(0)}
+.a11y-panel::-webkit-scrollbar{width:6px}
+.a11y-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
+
+.a11y-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-bottom:16px;
+  border-bottom:1.5px solid rgba(255,255,255,.25);
+  margin-bottom:16px;
+}
+.a11y-header h2{
+  font-size:20px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.a11y-close{
+  background:rgba(255,255,255,.15);
+  color:#fff;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  font-size:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:background .2s;
+}
+.a11y-close:hover{background:rgba(255,255,255,.3)}
+
+.a11y-section-title{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  opacity:.7;
+  margin:16px 0 6px 12px;
+  padding-top:10px;
+  border-top:1px solid rgba(255,255,255,.15);
+}
+.a11y-section-title:first-of-type{border-top:none;padding-top:0;margin-top:0}
+
+.a11y-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:15px;
+  font-weight:600;
+  transition:background .2s;
+  user-select:none;
+  position:relative;
+}
+.a11y-item:hover{background:rgba(255,255,255,.15)}
+.a11y-item:active{background:rgba(255,255,255,.25)}
+.a11y-item .icon{
+  font-size:20px;
+  width:28px;
+  text-align:center;
+  flex-shrink:0;
+}
+.a11y-item .label{flex:1}
+.a11y-item .switch{
+  width:36px;
+  height:20px;
+  border-radius:12px;
+  background:rgba(255,255,255,.25);
+  position:relative;
+  transition:background .25s;
+  flex-shrink:0;
+}
+.a11y-item .switch::after{
+  content:'';
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:#fff;
+  transition:transform .25s;
+  box-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+.a11y-item.active .switch{background:#fff}
+.a11y-item.active .switch::after{transform:translateX(16px);background:#dc2626}
+.a11y-item .stepper{
+  display:flex;
+  gap:4px;
+  align-items:center;
+}
+.a11y-item .stepper button{
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:rgba(255,255,255,.2);
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:background .2s;
+}
+.a11y-item .stepper button:hover{background:rgba(255,255,255,.4)}
+
+.a11y-item.reset .icon{
+  animation:spin 1s linear infinite;
+  animation-play-state:paused;
+}
+.a11y-item.reset:active .icon{animation-play-state:running}
+
+/* ================= BODY ACCESSIBILITY STATES ================= */
+body.a11y-grayscale{filter:grayscale(1)}
+body.a11y-grayscale .a11y-panel,
+body.a11y-grayscale .a11y-fab{filter:none}
+
+body.a11y-contrast{filter:contrast(1.4) saturate(1.3)}
+body.a11y-contrast .a11y-panel,
+body.a11y-contrast .a11y-fab{filter:none}
+
+body.a11y-negative{filter:invert(1) hue-rotate(180deg)}
+body.a11y-negative img,
+body.a11y-negative .a11y-panel,
+body.a11y-negative .a11y-fab{filter:invert(1) hue-rotate(180deg)}
+
+body.a11y-light-bg{
+  --bg:#ffffff!important;
+  --card:#f8fafc!important;
+  --text:#0f172a!important;
+  --border:#cbd5e1!important;
+}
+body.a11y-light-bg[data-theme="dark"]{
+  --bg:#ffffff!important;
+  --card:#f8fafc!important;
+  --text:#0f172a!important;
+  --border:#cbd5e1!important;
+}
+[data-theme="dark"] body.a11y-light-bg{--bg:#fff!important;--card:#f8fafc!important;--text:#0f172a!important}
+
+body.a11y-underline a,
+body.a11y-underline a:visited{text-decoration:underline!important;text-underline-offset:3px}
+body.a11y-underline button:not(.icon-btn):not(.tab):not(.a11y-close):not(.a11y-item):not(.stepper button){
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+
+body.a11y-readable,
+body.a11y-readable *{
+  font-family:'Comic Sans MS','Segoe UI',system-ui,sans-serif!important;
+  letter-spacing:.5px!important;
+}
+
+/* Color blind filters using SVG */
+body.a11y-protanopia{filter:url('#protanopia-filter')}
+body.a11y-deuteranopia{filter:url('#deuteranopia-filter')}
+body.a11y-tritanopia{filter:url('#tritanopia-filter')}
+body.a11y-protanopia .a11y-panel,
+body.a11y-protanopia .a11y-fab,
+body.a11y-deuteranopia .a11y-panel,
+body.a11y-deuteranopia .a11y-fab,
+body.a11y-tritanopia .a11y-panel,
+body.a11y-tritanopia .a11y-fab{filter:none}
+
+/* ================= LOGIN ================= */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;background:linear-gradient(-45deg,#0b3d2e,#16543f,#0a2342,#1a3a5f);background-size:400% 400%;animation:gradientShift 15s ease infinite}
+.login-wrap::before{content:'';position:absolute;inset:0;background:url('https://i.imgur.com/5AHn1Rk.png') center/cover;opacity:.08;pointer-events:none}
+.particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.particles span{position:absolute;bottom:-20px;width:8px;height:8px;background:rgba(244,180,0,.5);border-radius:50%;animation:floatUp 15s infinite ease-in}
+.particles span:nth-child(1){left:5%;animation-duration:18s;animation-delay:0s}
+.particles span:nth-child(2){left:15%;animation-duration:22s;animation-delay:2s;width:5px;height:5px}
+.particles span:nth-child(3){left:28%;animation-duration:16s;animation-delay:5s;width:10px;height:10px}
+.particles span:nth-child(4){left:42%;animation-duration:20s;animation-delay:1s}
+.particles span:nth-child(5){left:58%;animation-duration:24s;animation-delay:7s;width:6px;height:6px}
+.particles span:nth-child(6){left:71%;animation-duration:19s;animation-delay:3s}
+.particles span:nth-child(7){left:84%;animation-duration:21s;animation-delay:8s;width:12px;height:12px}
+.particles span:nth-child(8){left:93%;animation-duration:17s;animation-delay:4s}
+.login-card{position:relative;background:rgba(255,255,255,.1);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1.5px solid rgba(255,255,255,.2);border-radius:24px;padding:36px 28px;width:100%;max-width:420px;box-shadow:0 20px 40px rgba(0,0,0,.3);color:#fff;animation:cardEnter .7s cubic-bezier(.2,.8,.2,1)}
+.login-logo{width:110px;height:110px;border-radius:50%;border:4px solid var(--accent);object-fit:cover;display:block;margin:0 auto 16px;background:#fff;padding:4px;animation:pulseGlow 2.5s infinite}
+.login-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:4px;text-shadow:0 2px 8px rgba(0,0,0,.3)}
+.login-sub{text-align:center;font-size:13px;margin-bottom:24px;color:rgba(255,255,255,.8)}
+.login-card label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:rgba(255,255,255,.85)}
+.login-card input,.login-card select{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25);color:#fff}
+.login-card input::placeholder{color:rgba(255,255,255,.5)}
+.login-card select option{color:#0f172a;background:#fff}
+.login-card input:focus,.login-card select:focus{border-color:var(--accent);background:rgba(255,255,255,.25);box-shadow:0 0 0 3px rgba(244,180,0,.3)}
+.sync-status{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:rgba(255,255,255,.7);margin-top:14px}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite}
 .sync-dot.online{background:var(--success);animation:none}
 .sync-dot.offline{background:var(--danger);animation:none}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ================= APP SHELL ================= */
 .app{display:none;min-height:100vh;flex-direction:column}
 .app.active{display:flex}
 .topbar{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
@@ -68,30 +319,55 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none
 .topbar-actions{display:flex;gap:6px}
 .icon-btn{background:rgba(255,255,255,.15);color:#fff;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
 .icon-btn:hover{background:rgba(255,255,255,.28)}
+
 .tabs{display:flex;gap:4px;padding:10px 14px 0;background:var(--card);border-bottom:1.5px solid var(--border);overflow-x:auto;position:sticky;top:70px;z-index:40}
 .tabs::-webkit-scrollbar{display:none}
-.tab{padding:10px 16px;border-radius:12px 12px 0 0;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1.5px}
+.tab{padding:10px 16px;border-radius:12px 12px 0 0;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1.5px;transition:all .2s ease}
 .tab.active{color:var(--primary);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){transform:translateY(-2px);color:var(--primary)}
+
 main{padding:16px;max-width:1100px;margin:0 auto;width:100%;flex:1}
 .view{display:none}
 .view.active{display:block;animation:fadeIn .3s}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px}
-.card h2{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--primary)}
+.card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px;animation:slideUpFade .5s ease backwards}
+.card h2{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--primary);display:flex;align-items:center;gap:8px}
 [data-theme="dark"] .card h2{color:var(--accent)}
+
+.hero-banner{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 60%,var(--accent) 130%);background-size:200% 200%;animation:gradientShift 12s ease infinite;border-radius:20px;padding:22px 20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.hero-banner::before{content:'';position:absolute;top:-50%;right:-10%;width:200px;height:200px;background:radial-gradient(circle,rgba(255,255,255,.15) 0%,transparent 70%);border-radius:50%;animation:pulseGlow 4s infinite}
+.hero-banner h2{font-size:20px;font-weight:700;margin-bottom:4px;position:relative;z-index:1}
+.hero-banner p{font-size:13px;opacity:.9;position:relative;z-index:1}
+.hero-wave{display:inline-block;animation:wave 2s ease-in-out infinite;transform-origin:70% 70%;font-size:24px}
+.hero-info{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+.hero-chip{background:rgba(255,255,255,.2);backdrop-filter:blur(10px);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.3)}
+
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--shadow);border-left:4px solid var(--accent)}
+.stat{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--shadow);border-left:4px solid var(--accent);animation:cardEnter .5s ease backwards;transition:transform .25s ease,box-shadow .25s ease}
+.stat:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.stat:nth-child(1){animation-delay:.05s}
+.stat:nth-child(2){animation-delay:.15s}
+.stat:nth-child(3){animation-delay:.25s}
+.stat:nth-child(4){animation-delay:.35s}
 .stat .label{font-size:12px;color:var(--muted);font-weight:600}
 .stat .value{font-size:28px;font-weight:700;color:var(--primary);margin-top:4px}
 [data-theme="dark"] .stat .value{color:var(--accent)}
 .stat.green{border-left-color:var(--success)}
 .stat.red{border-left-color:var(--danger)}
 .stat.blue{border-left-color:var(--info)}
+.rate-ring{position:relative;width:60px;height:60px;flex-shrink:0}
+.rate-ring svg{transform:rotate(-90deg)}
+.rate-ring .ring-bg{stroke:rgba(0,0,0,.08)}
+.rate-ring .ring-fill{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:283;stroke-dashoffset:283;transition:stroke-dashoffset 1s ease}
+.rate-ring .ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--primary)}
+[data-theme="dark"] .rate-ring .ring-label{color:var(--accent)}
+
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .search{flex:1;min-width:180px;position:relative}
 .search input{padding-left:38px}
 .search::before{content:'🔍';position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.6}
-.student-row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1.5px solid var(--border);margin-bottom:8px;background:var(--card)}
+
+.student-row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1.5px solid var(--border);margin-bottom:8px;background:var(--card);transition:transform .2s,box-shadow .2s,border-color .2s}
+.student-row:hover{transform:translateX(4px);box-shadow:var(--shadow)}
 .student-row.absent{background:linear-gradient(90deg,rgba(230,57,70,.08),transparent);border-color:rgba(230,57,70,.3)}
 .student-row.present{background:linear-gradient(90deg,rgba(22,163,74,.06),transparent);border-color:rgba(22,163,74,.25)}
 .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0}
@@ -100,51 +376,274 @@ main{padding:16px;max-width:1100px;margin:0 auto;width:100%;flex:1}
 .student-info .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .student-info .meta{font-size:12px;color:var(--muted);margin-top:2px}
 .row-actions{display:flex;gap:6px}
+.grade-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:6px}
+.grade-A{background:#dcfce7;color:#166534}
+.grade-B{background:#dbeafe;color:#1e40af}
+.grade-C{background:#fef3c7;color:#92400e}
+.grade-D{background:#fed7aa;color:#9a3412}
+.grade-F{background:#fecaca;color:#991b1b}
+
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--card);border:1.5px solid var(--border);color:var(--muted)}
 .chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .chip .count{background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;font-size:11px;margin-left:5px}
 .chip:not(.active) .count{background:var(--bg)}
+
 .table-wrap{overflow:auto;border-radius:12px;border:1.5px solid var(--border);max-height:70vh}
 table{border-collapse:collapse;width:100%;font-size:12.5px}
 th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
 th{background:var(--primary);color:#fff;font-weight:600;position:sticky;top:0;z-index:2}
 td{background:var(--card)}
 td.name-col{text-align:left;font-weight:600;position:sticky;left:0;background:var(--card);z-index:1}
-.cell-P{color:var(--success);font-weight:700;cursor:pointer}
-.cell-A{color:var(--danger);font-weight:700;cursor:pointer}
-.cell-empty{color:var(--muted);cursor:pointer;opacity:.4}
+.cell-P{color:var(--success);font-weight:700;cursor:pointer;user-select:none}
+.cell-A{color:var(--danger);font-weight:700;cursor:pointer;user-select:none}
+.cell-empty{color:var(--muted);cursor:pointer;opacity:.4;user-select:none}
+.cell-P:hover,.cell-A:hover,.cell-empty:hover{background:rgba(244,180,0,.18)!important}
 .today-col{background:rgba(244,180,0,.15)!important;font-weight:700}
 .today-col-h{background:var(--accent)!important;color:#000!important}
 tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
+
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px;padding:10px;background:var(--bg);border-radius:10px}
 .legend span b{display:inline-block;margin-right:4px}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
-.modal{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:460px;box-shadow:var(--shadow-lg);max-height:90vh;overflow:auto}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;animation:fadeIn .2s}
+.modal{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:460px;box-shadow:var(--shadow-lg);max-height:90vh;overflow:auto;animation:cardEnter .35s cubic-bezier(.2,.8,.2,1)}
 .modal h3{font-size:18px;font-weight:700;margin-bottom:16px;color:var(--primary)}
 [data-theme="dark"] .modal h3{color:var(--accent)}
 .modal label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 6px}
 .modal-actions{display:flex;gap:8px;margin-top:20px}
 .modal-actions .btn{flex:1}
+
 .notice-item{padding:12px;border-radius:12px;background:linear-gradient(135deg,rgba(244,180,0,.1),transparent);border-left:4px solid var(--accent);margin-bottom:8px;display:flex;justify-content:space-between;gap:10px}
 .notice-item .text{flex:1;font-size:14px}
 .notice-item .time{font-size:11px;color:var(--muted)}
 .notice-item .del{background:transparent;color:var(--danger);font-size:16px;padding:4px 8px;cursor:pointer}
+
 .chart-box{position:relative;height:240px;margin-top:8px}
-.toast{position:fixed;top:20px;right:20px;background:var(--primary);color:#fff;padding:14px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);z-index:1000;max-width:340px}
+
+.toast{position:fixed;top:20px;right:20px;background:var(--primary);color:#fff;padding:14px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);z-index:1000;max-width:340px;animation:slideIn .3s}
 .toast.error{background:var(--danger)}
 .toast.success{background:var(--success)}
 .toast.info{background:var(--info)}
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
-.empty .icon{font-size:48px;margin-bottom:12px;opacity:.5}
-.live-badge{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;z-index:99}
-.live-badge .dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse 1.5s infinite}
-@media(max-width:640px){main{padding:12px}.card{padding:14px}.topbar-info h1{font-size:13px}.stat .value{font-size:22px}}
+.empty .icon{font-size:48px;margin-bottom:12px;opacity:.5;display:inline-block;animation:wave 3s ease-in-out infinite;transform-origin:50% 50%}
+
+.live-badge{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;z-index:99;animation:slideUpFade .5s ease backwards}
+.live-badge .dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:livePulse 1.5s ease-in-out infinite}
+.wa-banner{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);animation:slideUpFade .5s ease backwards;animation-delay:.2s;transition:transform .25s}
+.wa-banner:hover{transform:translateY(-2px)}
+.wa-banner .wa-icon{font-size:32px;background:rgba(255,255,255,.2);width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wa-banner .wa-info{flex:1;min-width:0}
+.wa-banner .wa-info h3{font-size:15px;font-weight:700;margin-bottom:2px}
+.wa-banner .wa-info p{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-banner .btn{width:auto;padding:9px 14px;font-size:13px;background:rgba(255,255,255,.2);color:#fff}
+.wa-banner .btn.primary{background:#fff;color:#128C7E}
+
+.analytics-header{display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:16px;background:linear-gradient(135deg,rgba(11,61,46,.05),transparent);border-radius:14px}
+.analytics-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:28px;flex-shrink:0;border:3px solid var(--accent)}
+.analytics-info h3{font-size:18px;margin-bottom:4px}
+.analytics-info p{font-size:13px;color:var(--muted)}
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
+.analytics-cell{background:var(--bg);border-radius:12px;padding:12px;text-align:center}
+.analytics-cell .lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.analytics-cell .num{font-size:22px;font-weight:700;color:var(--primary);margin-top:4px}
+[data-theme="dark"] .analytics-cell .num{color:var(--accent)}
+
+.leader-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.leader-grid{grid-template-columns:1fr}}
+.leader-col{background:var(--bg);border-radius:14px;padding:14px}
+.leader-col h3{font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.leader-item{display:flex;align-items:center;gap:10px;padding:8px;background:var(--card);border-radius:10px;margin-bottom:6px;font-size:13px}
+.leader-rank{width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.leader-rank.gold{background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+.leader-rank.silver{background:linear-gradient(135deg,#cbd5e1,#94a3b8)}
+.leader-rank.bronze{background:linear-gradient(135deg,#d97706,#92400e)}
+.leader-rank.danger{background:var(--danger)}
+.leader-name{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.leader-pct{font-weight:700;color:var(--success);font-size:13px}
+.leader-pct.low{color:var(--danger)}
+
+.heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(18px,1fr));gap:3px;margin-top:10px}
+.heat-cell{aspect-ratio:1;border-radius:4px;background:rgba(0,0,0,.05);cursor:pointer;transition:transform .15s}
+.heat-cell:hover{transform:scale(1.3);z-index:2}
+.heat-cell.l1{background:#bbf7d0}
+.heat-cell.l2{background:#86efac}
+.heat-cell.l3{background:#4ade80}
+.heat-cell.l4{background:#22c55e}
+.heat-cell.l5{background:#16a34a}
+.heat-cell.today{outline:2px solid var(--accent);outline-offset:1px}
+.heat-legend{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.heat-legend span{width:14px;height:14px;border-radius:3px;display:inline-block}
+
+.confetti-container{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti{position:absolute;width:10px;height:10px;background:var(--accent);animation:confettiFall 3s linear forwards}
+.confetti:nth-child(odd){background:#f4b400}
+.confetti:nth-child(3n){background:#25D366}
+.confetti:nth-child(4n){background:#2563eb}
+.confetti:nth-child(5n){background:#e63946;border-radius:50%}
+@keyframes confettiFall{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100vh) scale(.5);opacity:0}}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(244,180,0,.5)}50%{box-shadow:0 0 0 20px rgba(244,180,0,0)}}
+@keyframes cardEnter{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes slideUpFade{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wave{0%,100%{transform:rotate(0deg)}25%{transform:rotate(20deg)}75%{transform:rotate(-15deg)}}
+@keyframes livePulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.4}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:640px){main{padding:12px}.card{padding:14px}.topbar-info h1{font-size:13px}.stat .value{font-size:22px}.wa-banner{flex-direction:column;align-items:stretch}.wa-banner .btn{flex:1}.a11y-fab.open{left:0}}
+
+@media print{
+  .topbar,.tabs,.toolbar,.row-actions,.live-badge,.hero-banner,.a11y-fab,.a11y-panel{display:none!important}
+  body{background:#fff;zoom:1}
+  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+}
 </style>
 </head>
 <body>
 
+<!-- ================= SVG Color Blind Filters (hidden) ================= -->
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+  <defs>
+    <filter id="protanopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.567 0.433 0 0 0
+        0.558 0.442 0 0 0
+        0 0.242 0.758 0 0
+        0 0 0 1 0"/>
+    </filter>
+    <filter id="deuteranopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.625 0.375 0 0 0
+        0.7 0.3 0 0 0
+        0 0.3 0.7 0 0
+        0 0 0 1 0"/>
+    </filter>
+    <filter id="tritanopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.95 0.05 0 0 0
+        0 0.433 0.567 0 0
+        0 0.475 0.525 0 0
+        0 0 0 1 0"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- ================= ACCESSIBILITY MENU ================= -->
+<button class="a11y-fab" id="a11yFab" onclick="toggleA11y()" title="Accessibility Menu" aria-label="Accessibility Menu">♿</button>
+
+<div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Accessibility Menu">
+  <div class="a11y-header">
+    <h2>♿ Accessibility</h2>
+    <button class="a11y-close" onclick="toggleA11y()" aria-label="Close">✕</button>
+  </div>
+
+  <div class="a11y-section-title">টেক্সট</div>
+
+  <div class="a11y-item" data-a11y="text-up" onclick="a11yAction('text-up')">
+    <span class="icon">🔍</span>
+    <span class="label" id="txtUpLabel">Increase Text</span>
+  </div>
+
+  <div class="a11y-item" data-a11y="text-down" onclick="a11yAction('text-down')">
+    <span class="icon">🔍</span>
+    <span class="label" id="txtDownLabel">Decrease Text</span>
+  </div>
+
+  <div class="a11y-item" data-a11y="line-spacing" onclick="a11yAction('line-spacing')">
+    <span class="icon">📏</span>
+    <span class="label">Line Spacing <span id="lineSpacingVal" style="opacity:.75;font-size:13px">(1.5)</span></span>
+    <span class="stepper">
+      <button onclick="event.stopPropagation();lineSpacing(-0.1)" aria-label="Decrease">−</button>
+      <button onclick="event.stopPropagation();lineSpacing(0.1)" aria-label="Increase">+</button>
+    </span>
+  </div>
+
+  <div class="a11y-section-title">ভিজ্যুয়াল</div>
+
+  <div class="a11y-item" data-a11y="grayscale" onclick="a11yAction('grayscale')">
+    <span class="icon">▥</span>
+    <span class="label">Grayscale</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-item" data-a11y="contrast" onclick="a11yAction('contrast')">
+    <span class="icon">◐</span>
+    <span class="label">High Contrast</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-item" data-a11y="negative" onclick="a11yAction('negative')">
+    <span class="icon">👁</span>
+    <span class="label">Negative Contrast</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-item" data-a11y="light-bg" onclick="a11yAction('light-bg')">
+    <span class="icon">💡</span>
+    <span class="label">Light Background</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-section-title">কালার ব্লাইন্ড</div>
+
+  <div class="a11y-item" data-a11y="protanopia" onclick="a11yAction('protanopia')">
+    <span class="icon">🎨</span>
+    <span class="label">Protanopia (লাল-সবুজ)</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-item" data-a11y="deuteranopia" onclick="a11yAction('deuteranopia')">
+    <span class="icon">🎨</span>
+    <span class="label">Deuteranopia (সবুজ-লাল)</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-item" data-a11y="tritanopia" onclick="a11yAction('tritanopia')">
+    <span class="icon">🎨</span>
+    <span class="label">Tritanopia (নীল-হলুদ)</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-section-title">রিডিং</div>
+
+  <div class="a11y-item" data-a11y="underline" onclick="a11yAction('underline')">
+    <span class="icon">🔗</span>
+    <span class="label">Links Underline</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-item" data-a11y="readable" onclick="a11yAction('readable')">
+    <span class="icon">A</span>
+    <span class="label">Readable Font</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-item" data-a11y="read-aloud" onclick="a11yAction('read-aloud')">
+    <span class="icon">🔊</span>
+    <span class="label">Read Aloud (Bengali)</span>
+    <span class="switch"></span>
+  </div>
+
+  <div class="a11y-section-title"></div>
+
+  <div class="a11y-item reset" onclick="a11yAction('reset')">
+    <span class="icon">↺</span>
+    <span class="label">Reset All</span>
+  </div>
+</div>
+
+<!-- ================= LOGIN ================= -->
 <div class="login-wrap" id="loginWrap">
+  <div class="particles">
+    <span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span>
+  </div>
+
   <div class="login-card">
     <img class="login-logo" src="https://i.imgur.com/kthmVIB.png" onerror="this.src='https://via.placeholder.com/110'">
     <div class="login-title">Momtaj Uddin Business Management College</div>
@@ -152,9 +651,13 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
     <label>শ্রেণি নির্বাচন করুন</label>
     <select id="loginClass">
       <option value="">-- শ্রেণি --</option>
-      <option>১ম শ্রেণি</option><option>২য় শ্রেণি</option><option>৩য় শ্রেণি</option>
-      <option>৪র্থ শ্রেণি</option><option>৫ম শ্রেণি</option><option>৬ষ্ঠ শ্রেণি</option>
-      <option>৭ম শ্রেণি</option><option>৮ম শ্রেণি</option><option>৯ম শ্রেণি</option><option>১০ম শ্রেণি</option>
+      <option>৬ষ্ঠ শ্রেণি</option>
+      <option>৭ম শ্রেণি</option>
+      <option>৮ম শ্রেণি</option>
+      <option>৯ম শ্রেণি</option>
+      <option>১০ম শ্রেণি</option>
+      <option>১১শ শ্রেণি</option>
+      <option>১২শ শ্রেণি</option>
     </select>
     <label>পাসওয়ার্ড</label>
     <input type="password" id="loginPass" placeholder="ডিফল্ট: admin123">
@@ -168,6 +671,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
   </div>
 </div>
 
+<!-- ================= APP ================= -->
 <div class="app" id="app">
   <div class="topbar">
     <img class="logo" src="https://i.imgur.com/kthmVIB.png" onerror="this.src='https://via.placeholder.com/46'">
@@ -185,18 +689,54 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
     <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 ড্যাশবোর্ড</button>
     <button class="tab" data-tab="students" onclick="switchTab('students')">👥 শিক্ষার্থী</button>
     <button class="tab" data-tab="monthly" onclick="switchTab('monthly')">🗓️ হাজিরা</button>
+    <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏅 লিডারবোর্ড</button>
+    <button class="tab" data-tab="heatmap" onclick="switchTab('heatmap')">🔥 হিটম্যাপ</button>
     <button class="tab" data-tab="results" onclick="switchTab('results')">🏆 ফলাফল</button>
     <button class="tab" data-tab="notice" onclick="switchTab('notice')">📢 নোটিশ</button>
+    <button class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ সেটিংস</button>
   </div>
 
   <main>
     <section class="view active" id="view-dashboard">
-      <div class="stats">
-        <div class="stat"><div class="label">মোট শিক্ষার্থী</div><div class="value" id="stTotal">0</div></div>
-        <div class="stat green"><div class="label">আজ উপস্থিত</div><div class="value" id="stPresent">0</div></div>
-        <div class="stat red"><div class="label">আজ অনুপস্থিত</div><div class="value" id="stAbsent">0</div></div>
-        <div class="stat blue"><div class="label">উপস্থিতির হার</div><div class="value" id="stRate">0%</div></div>
+      <div class="hero-banner">
+        <h2><span class="hero-wave">👋</span> স্বাগতম!</h2>
+        <p>Momtaj Uddin Business Management College</p>
+        <div class="hero-info">
+          <span class="hero-chip">📚 <b id="heroClass">-</b></span>
+          <span class="hero-chip">📅 <span id="heroDate">-</span></span>
+        </div>
       </div>
+
+      <div id="waBannerWrap"></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">মোট শিক্ষার্থী</div>
+          <div class="value" id="stTotal">0</div>
+        </div>
+        <div class="stat green">
+          <div class="label">আজ উপস্থিত</div>
+          <div class="value" id="stPresent">0</div>
+        </div>
+        <div class="stat red">
+          <div class="label">আজ অনুপস্থিত</div>
+          <div class="value" id="stAbsent">0</div>
+        </div>
+        <div class="stat blue" style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div class="label">উপস্থিতির হার</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">আজকের</div>
+          </div>
+          <div class="rate-ring">
+            <svg width="60" height="60" viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="45" fill="none" stroke-width="8"/>
+              <circle class="ring-fill" id="rateRing" cx="50" cy="50" r="45" fill="none" stroke-width="8"/>
+            </svg>
+            <div class="ring-label" id="stRate">0%</div>
+          </div>
+        </div>
+      </div>
+
       <div class="card"><h2>📈 সাপ্তাহিক ট্রেন্ড</h2><div class="chart-box"><canvas id="trendChart"></canvas></div></div>
     </section>
 
@@ -224,15 +764,50 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
           <button class="btn btn-success btn-sm" onclick="markToday('present')">✅ আজ সবাই উপস্থিত</button>
           <button class="btn btn-danger btn-sm" onclick="markToday('absent')">❌ আজ সবাই অনুপস্থিত</button>
           <button class="btn btn-info btn-sm" onclick="exportMonthly()">📥 Excel</button>
+          <button class="btn btn-wa btn-sm" onclick="shareMonthlyWhatsApp()">💬 রিপোর্ট পাঠান</button>
+          <button class="btn btn-ghost btn-sm" onclick="undoLast()" id="undoBtn" title="Ctrl+Z" disabled>↶ Undo</button>
         </div>
         <div class="legend">
           <span><b style="color:var(--success)">✓</b> উপস্থিত</span>
           <span><b style="color:var(--danger)">✗</b> অনুপস্থিত</span>
           <span><b style="color:var(--muted)">-</b> চিহ্নিত হয়নি</span>
-          <span>💡 যেকোনো সেলে ক্লিক করে অবস্থা পরিবর্তন করুন</span>
-          <span>🟡 হলুদ = আজকের তারিখ</span>
+          <span>💡 সেলে ক্লিক → ✓⇄✗ (Ctrl+Z = Undo)</span>
         </div>
         <div class="table-wrap" id="monthlyTable" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-leaderboard">
+      <div class="card">
+        <h2>🏅 সেরা শিক্ষার্থী — <span id="leaderMonth"></span></h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">এই মাসের হাজিরা শতাংশের ভিত্তিতে।</p>
+        <div class="leader-grid">
+          <div class="leader-col">
+            <h3>🥇 সর্বোচ্চ উপস্থিতি</h3>
+            <div id="topList"><div class="empty" style="padding:20px"><p>ডেটা নেই</p></div></div>
+          </div>
+          <div class="leader-col">
+            <h3>⚠️ সর্বনিম্ন উপস্থিতি</h3>
+            <div id="bottomList"><div class="empty" style="padding:20px"><p>ডেটা নেই</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-heatmap">
+      <div class="card">
+        <h2>🔥 উপস্থিতির হিটম্যাপ — <span id="heatMonth"></span></h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">প্রতিটি স্কোয়ার = একদিন। রঙ গাঢ় মানে বেশি শিক্ষার্থী উপস্থিত।</p>
+        <div class="heatmap" id="heatmapGrid"></div>
+        <div class="heat-legend">
+          <span>কম</span>
+          <span style="background:#bbf7d0"></span>
+          <span style="background:#86efac"></span>
+          <span style="background:#4ade80"></span>
+          <span style="background:#22c55e"></span>
+          <span style="background:#16a34a"></span>
+          <span>বেশি</span>
+        </div>
       </div>
     </section>
 
@@ -247,20 +822,247 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
       <div class="card">
         <h2>📢 নোটিশ</h2>
         <textarea id="noticeInput" rows="3" placeholder="নোটিশ লিখুন..."></textarea>
-        <button class="btn btn-accent" style="margin-top:10px" onclick="addNotice()">📌 যোগ করুন</button>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-accent" onclick="addNotice()" style="flex:1">📌 যোগ করুন</button>
+          <button class="btn btn-wa" onclick="sendNoticeWhatsApp()" style="flex:1">💬 WhatsApp এ পাঠান</button>
+        </div>
       </div>
       <div class="card"><h2>📋 নোটিশ বোর্ড</h2><div id="noticeList"></div></div>
+    </section>
+
+    <section class="view" id="view-settings">
+      <div class="card">
+        <h2>💬 WhatsApp গ্রুপ — <span id="waClassLabel"></span></h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">এই শ্রেণির WhatsApp গ্রুপের ইনভাইট লিংক দিন।</p>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Group Invite Link</label>
+        <input id="waGroupLink" placeholder="https://chat.whatsapp.com/XXXXXXXXXX">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 6px">গ্রুপের নাম (ঐচ্ছিক)</label>
+        <input id="waGroupName" placeholder="যেমন: ৬ষ্ঠ শ্রেণি অভিভাবক গ্রুপ">
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="saveWhatsAppSettings()" style="flex:1">💾 সেভ করুন</button>
+          <button class="btn btn-wa" onclick="testWhatsAppLink()" style="flex:1">🔗 টেস্ট করুন</button>
+          <button class="btn btn-ghost" onclick="clearWhatsAppSettings()" style="flex:1">🗑️ মুছুন</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🔐 পাসওয়ার্ড</h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">ডিফল্ট পাসওয়ার্ড: <b>admin123</b></p>
+        <input type="password" id="newPass" placeholder="নতুন পাসওয়ার্ড" autocomplete="new-password">
+        <button class="btn btn-danger" style="margin-top:12px" onclick="changePassword()">🔑 পরিবর্তন করুন</button>
+      </div>
+
+      <div class="card">
+        <h2>ℹ️ অ্যাপ সম্পর্কে</h2>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7">
+          <b>Momtaj Uddin Business Management College</b><br>
+          আধুনিক ক্লাউড হাজিরা ব্যবস্থাপনা অ্যাপ।<br>
+          ভার্সন: 6.0 — সম্পূর্ণ অ্যাক্সেসিবিলিটি স্যুট।<br>
+          Ctrl+Z = Undo
+        </p>
+      </div>
     </section>
   </main>
 </div>
 
 <div id="modalRoot"></div>
 <div class="live-badge hidden" id="liveBadge"><span class="dot"></span> Live Sync</div>
+<div class="confetti-container" id="confettiBox"></div>
 
 <script>
+/* ============================================================
+   ACCESSIBILITY SYSTEM
+   ============================================================ */
+const A11Y_KEY = 'a11y_prefs';
+
+function getA11yPrefs(){
+  try { return JSON.parse(localStorage.getItem(A11Y_KEY) || '{}'); }
+  catch { return {}; }
+}
+function setA11yPrefs(p){ localStorage.setItem(A11Y_KEY, JSON.stringify(p)); }
+
+function toggleA11y(){
+  document.getElementById('a11yPanel').classList.toggle('open');
+  document.getElementById('a11yFab').classList.toggle('open');
+}
+
+function a11yAction(action){
+  const prefs = getA11yPrefs();
+
+  if (action === 'reset'){
+    ['grayscale','contrast','negative','light-bg','underline','readable','protanopia','deuteranopia','tritanopia','a11y-zoom','read-aloud']
+      .forEach(k=>document.body.classList.remove('a11y-'+k));
+    document.documentElement.style.setProperty('--a11y-scale', 1);
+    document.documentElement.style.setProperty('--a11y-line', 1.5);
+    setA11yPrefs({});
+    updateA11ySwitches();
+    updateTextLabels();
+    document.getElementById('lineSpacingVal').textContent = '(1.5)';
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    toast('♿ সব রিসেট হয়েছে','info');
+    return;
+  }
+
+  if (action === 'text-up'){
+    const cur = parseFloat(prefs.scale || 1);
+    const next = Math.min(1.6, +(cur + 0.1).toFixed(1));
+    document.documentElement.style.setProperty('--a11y-scale', next);
+    document.body.classList.add('a11y-zoom');
+    prefs.scale = next;
+    setA11yPrefs(prefs);
+    updateTextLabels();
+    toast(`🔍 টেক্সট: ${Math.round(next*100)}%`,'info');
+    return;
+  }
+
+  if (action === 'text-down'){
+    const cur = parseFloat(prefs.scale || 1);
+    const next = Math.max(0.7, +(cur - 0.1).toFixed(1));
+    document.documentElement.style.setProperty('--a11y-scale', next);
+    if (next === 1) document.body.classList.remove('a11y-zoom');
+    else document.body.classList.add('a11y-zoom');
+    prefs.scale = next;
+    setA11yPrefs(prefs);
+    updateTextLabels();
+    toast(`🔍 টেক্সট: ${Math.round(next*100)}%`,'info');
+    return;
+  }
+
+  if (action === 'line-spacing'){
+    // handled by the +/- buttons
+    return;
+  }
+
+  if (action === 'read-aloud'){
+    const isOn = document.body.classList.toggle('a11y-read-aloud');
+    prefs['read-aloud'] = isOn;
+    setA11yPrefs(prefs);
+    updateA11ySwitches();
+    if (isOn) startReadAloud();
+    else if (window.speechSynthesis) window.speechSynthesis.cancel();
+    toast(isOn ? '🔊 রিড অ্যালাউড চালু — ক্লিক করুন' : '🔇 বন্ধ', 'info');
+    return;
+  }
+
+  // Color blind filters — only one at a time
+  if (['protanopia','deuteranopia','tritanopia'].includes(action)){
+    ['protanopia','deuteranopia','tritanopia'].forEach(k=>{
+      document.body.classList.remove('a11y-'+k);
+      prefs[k] = false;
+    });
+    const isOn = !prefs[action];
+    if (isOn){
+      document.body.classList.add('a11y-'+action);
+      prefs[action] = true;
+    }
+    setA11yPrefs(prefs);
+    updateA11ySwitches();
+    toast(isOn ? `🎨 ${action} চালু` : '🎨 বন্ধ', 'info');
+    return;
+  }
+
+  // Simple toggles
+  const toggleMap = ['grayscale','contrast','negative','light-bg','underline','readable'];
+  if (toggleMap.includes(action)){
+    const isOn = document.body.classList.toggle('a11y-'+action);
+    prefs[action] = isOn;
+    setA11yPrefs(prefs);
+    updateA11ySwitches();
+    toast(isOn ? `♿ ${action} চালু` : `♿ ${action} বন্ধ`, 'info');
+  }
+}
+
+function lineSpacing(delta){
+  const prefs = getA11yPrefs();
+  const cur = parseFloat(prefs.line || 1.5);
+  const next = Math.max(1, Math.min(2.5, +(cur + delta).toFixed(1)));
+  document.documentElement.style.setProperty('--a11y-line', next);
+  prefs.line = next;
+  setA11yPrefs(prefs);
+  document.getElementById('lineSpacingVal').textContent = `(${next})`;
+  updateA11ySwitches();
+}
+
+function updateTextLabels(){
+  const prefs = getA11yPrefs();
+  const pct = Math.round((prefs.scale || 1) * 100);
+  const upLbl = document.getElementById('txtUpLabel');
+  const downLbl = document.getElementById('txtDownLabel');
+  if (upLbl) upLbl.textContent = `Increase Text (${pct}%)`;
+  if (downLbl) downLbl.textContent = `Decrease Text (${pct}%)`;
+}
+
+function updateA11ySwitches(){
+  const prefs = getA11yPrefs();
+  ['grayscale','contrast','negative','light-bg','underline','readable','protanopia','deuteranopia','tritanopia','read-aloud'].forEach(k=>{
+    const el = document.querySelector(`.a11y-item[data-a11y="${k}"]`);
+    if (el) el.classList.toggle('active', !!prefs[k]);
+  });
+  const lineVal = document.getElementById('lineSpacingVal');
+  if (lineVal) lineVal.textContent = `(${prefs.line || 1.5})`;
+}
+
+/* ===== Read Aloud ===== */
+let readAloudHandler = null;
+function startReadAloud(){
+  if (readAloudHandler) document.removeEventListener('click', readAloudHandler, true);
+  readAloudHandler = function(e){
+    const target = e.target.closest('button, a, h1, h2, h3, p, .tab, .student-row, .leader-item, .notice-item');
+    if (!target) return;
+    if (target.classList.contains('a11y-item') || target.closest('.a11y-panel')) return;
+    const text = (target.innerText || target.textContent || '').trim().slice(0, 200);
+    if (!text) return;
+    e.preventDefault();
+    e.stopPropagation();
+    speakText(text);
+  };
+  document.addEventListener('click', readAloudHandler, true);
+  speakText('রিড অ্যালাউড চালু হয়েছে। যেকোনো লেখা বা বাটনে ক্লিক করুন, পড়ে শোনানো হবে।');
+}
+function speakText(text){
+  if (!window.speechSynthesis) return toast('এই ব্রাউজারে সাপোর্ট নেই','error');
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  // Try to use Bengali voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const bnVoice = voices.find(v => v.lang && v.lang.startsWith('bn'));
+  if (bnVoice) u.voice = bnVoice;
+  u.lang = 'bn-BD';
+  u.rate = 0.95;
+  u.pitch = 1;
+  window.speechSynthesis.speak(u);
+}
+
+function applyA11yPrefs(){
+  const prefs = getA11yPrefs();
+  if (prefs.scale && prefs.scale !== 1){
+    document.documentElement.style.setProperty('--a11y-scale', prefs.scale);
+    document.body.classList.add('a11y-zoom');
+  }
+  if (prefs.line){
+    document.documentElement.style.setProperty('--a11y-line', prefs.line);
+  }
+  ['grayscale','contrast','negative','light-bg','underline','readable','protanopia','deuteranopia','tritanopia'].forEach(k=>{
+    if (prefs[k]) document.body.classList.add('a11y-'+k);
+  });
+  updateA11ySwitches();
+  updateTextLabels();
+}
+applyA11yPrefs();
+
+/* Preload voices */
+if (window.speechSynthesis){
+  window.speechSynthesis.onvoiceschanged = ()=>{};
+  window.speechSynthesis.getVoices();
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
 let currentClass = '';
 let students = [], attendance = {}, results = {}, notices = [];
 let subNames = ['বিষয় 1','বিষয় 2','বিষয় 3','বিষয় 4','বিষয় 5','বিষয় 6','বিষয় 7','বিষয় 8','বিষয় 9','বিষয় 10','বিষয় 11','বিষয় 12','বিষয় 13'];
+let whatsapp = { link:'', name:'' };
 let filter = 'all';
 let trendChart = null;
 let fbReady = false;
@@ -268,6 +1070,72 @@ let unsubListener = null;
 let pushTimer = null;
 const DEFAULT_PASS = 'admin123';
 
+/* ============================================================
+   UNDO SYSTEM
+   ============================================================ */
+let history = [];
+const HISTORY_MAX = 50;
+
+function pushHistory(type, a, b, c){
+  if (type === 'cell') history.push({ type:'cell', k:a, i:b, prev:c, t:Date.now() });
+  else if (type === 'bulk') history.push({ type:'bulk', k:a, prev:b, t:Date.now() });
+  else if (type === 'students') history.push({ type:'students', prev:a, t:Date.now() });
+  else if (type === 'delete-student') history.push({ type:'delete-student', index:a, student:b, t:Date.now() });
+  else if (type === 'delete-notice') history.push({ type:'delete-notice', index:a, notice:b, t:Date.now() });
+  if (history.length > HISTORY_MAX) history.shift();
+  updateUndoButton();
+}
+
+function updateUndoButton(){
+  const btn = document.getElementById('undoBtn');
+  if (!btn) return;
+  const has = history.length > 0;
+  btn.disabled = !has;
+  btn.textContent = has ? `↶ Undo (${history.length})` : '↶ Undo';
+}
+
+async function undoLast(){
+  if (!history.length) return toast('ফেরানোর কিছু নেই','info');
+  const last = history.pop();
+  try {
+    if (last.type === 'cell'){
+      if (!attendance[last.k]) attendance[last.k] = {};
+      if (last.prev === undefined || last.prev === null) delete attendance[last.k][last.i];
+      else attendance[last.k][last.i] = last.prev;
+    } else if (last.type === 'bulk'){
+      if (last.prev === null) delete attendance[last.k];
+      else attendance[last.k] = JSON.parse(JSON.stringify(last.prev));
+    } else if (last.type === 'students'){
+      students = JSON.parse(JSON.stringify(last.prev));
+    } else if (last.type === 'delete-student'){
+      students.splice(last.index, 0, last.student);
+    } else if (last.type === 'delete-notice'){
+      notices.splice(last.index, 0, last.notice);
+    }
+    await saveToCloud();
+    const active = document.querySelector('.view.active')?.id;
+    if (active === 'view-monthly') renderMonthly();
+    if (active === 'view-students') renderStudents();
+    if (active === 'view-dashboard') renderDashboard();
+    if (active === 'view-notice') renderNotices();
+    if (active === 'view-leaderboard') renderLeaderboard();
+    if (active === 'view-heatmap') renderHeatmap();
+    updateUndoButton();
+    toast('↶ ফিরিয়ে আনা হয়েছে','success');
+  } catch(err){ console.error(err); toast('❌ ফেরানো যায়নি','error'); }
+}
+
+document.addEventListener('keydown', (e)=>{
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z'){ e.preventDefault(); undoLast(); }
+  if (e.key === 'Escape'){
+    const panel = document.getElementById('a11yPanel');
+    if (panel && panel.classList.contains('open')) toggleA11y();
+  }
+});
+
+/* ============================================================
+   FIREBASE
+   ============================================================ */
 window.addEventListener('firebase-ready', ()=>{ fbReady = true; checkCloud(); });
 
 async function checkCloud(){
@@ -295,13 +1163,15 @@ async function loadFromCloud(){
     results = d.results || {};
     notices = d.notices || [];
     subNames = d.subNames || subNames;
+    whatsapp = d.whatsapp || { link:'', name:'' };
     if (d.password) localStorage.setItem('cached_pass_'+currentClass, d.password);
   } else {
     await window.fbFns.setDoc(cloudRef(), {
       students: [], attendance: {}, results: {}, notices: [],
-      subNames, password: DEFAULT_PASS, createdAt: window.fbFns.serverTimestamp()
+      subNames, whatsapp: {link:'',name:''}, password: DEFAULT_PASS,
+      createdAt: window.fbFns.serverTimestamp()
     });
-    students=[]; attendance={}; results={}; notices=[];
+    students=[]; attendance={}; results={}; notices=[]; whatsapp={link:'',name:''};
   }
 }
 
@@ -309,7 +1179,7 @@ async function saveToCloud(){
   if (!currentClass || !fbReady) return;
   try {
     await window.fbFns.setDoc(cloudRef(), {
-      students, attendance, results, notices, subNames,
+      students, attendance, results, notices, subNames, whatsapp,
       updatedAt: window.fbFns.serverTimestamp()
     }, { merge: true });
   } catch(err){ console.error(err); toast('☁️ সেভ ব্যর্থ','error'); }
@@ -330,14 +1200,22 @@ function startLiveSync(){
     results = d.results || {};
     notices = d.notices || [];
     subNames = d.subNames || subNames;
+    whatsapp = d.whatsapp || {link:'',name:''};
     const active = document.querySelector('.view.active')?.id;
     if (active === 'view-dashboard') renderDashboard();
     if (active === 'view-students') renderStudents();
     if (active === 'view-monthly') renderMonthly();
     if (active === 'view-notice') renderNotices();
+    if (active === 'view-settings') renderSettings();
+    if (active === 'view-leaderboard') renderLeaderboard();
+    if (active === 'view-heatmap') renderHeatmap();
+    renderWhatsAppBanner();
   });
 }
 
+/* ============================================================
+   HELPERS
+   ============================================================ */
 function todayKey(d=new Date()){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function bn(n){ return String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -356,6 +1234,9 @@ function toggleTheme(){
 }
 document.documentElement.setAttribute('data-theme', localStorage.getItem('theme')||'light');
 
+/* ============================================================
+   AUTH
+   ============================================================ */
 async function doLogin(){
   if (!fbReady) return toast('☁️ সংযোগ তৈরি হচ্ছে','info');
   const cls = document.getElementById('loginClass').value;
@@ -389,27 +1270,72 @@ function logout(){
   location.reload();
 }
 
+/* ============================================================
+   TABS
+   ============================================================ */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
   if (name==='dashboard') renderDashboard();
   if (name==='students')  renderStudents();
   if (name==='monthly')   initMonthly();
+  if (name==='leaderboard') renderLeaderboard();
+  if (name==='heatmap')   renderHeatmap();
   if (name==='results')   renderResults();
   if (name==='notice')    renderNotices();
+  if (name==='settings')  renderSettings();
 }
 
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
 function renderDashboard(){
+  const heroClassEl = document.getElementById('heroClass');
+  const heroDateEl = document.getElementById('heroDate');
+  if (heroClassEl) heroClassEl.textContent = currentClass;
+  if (heroDateEl) {
+    const d = new Date();
+    const months = ['জানু','ফেব','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্ট','অক্টো','নভে','ডিসে'];
+    heroDateEl.textContent = bn(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + bn(d.getFullYear());
+  }
+
   const t = students.length;
   const today = attendance[todayKey()] || {};
   let p=0, a=0;
   students.forEach((_,i)=>{ if (today[i]==='A') a++; else p++; });
-  document.getElementById('stTotal').textContent = bn(t);
-  document.getElementById('stPresent').textContent = bn(p);
-  document.getElementById('stAbsent').textContent = bn(a);
-  document.getElementById('stRate').textContent = bn(t?Math.round(p/t*100):0)+'%';
+  const rate = t ? Math.round(p/t*100) : 0;
+
+  animateNumber('stTotal', t);
+  animateNumber('stPresent', p);
+  animateNumber('stAbsent', a);
+
+  const ring = document.getElementById('rateRing');
+  if (ring){
+    const dasharray = 283;
+    const dashoffset = dasharray * (1 - rate/100);
+    setTimeout(()=>{ ring.style.strokeDashoffset = dashoffset; }, 100);
+  }
+  const rateLabel = document.getElementById('stRate');
+  if (rateLabel) rateLabel.textContent = bn(rate)+'%';
+
   drawTrend();
+  renderWhatsAppBanner();
 }
+
+function animateNumber(id, target){
+  const el = document.getElementById(id);
+  if (!el) return;
+  const duration = 800;
+  const startTime = performance.now();
+  function tick(now){
+    const progress = Math.min((now - startTime) / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    el.textContent = bn(Math.round(target * easeOut));
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 function drawTrend(){
   const ctx = document.getElementById('trendChart');
   if (!ctx) return;
@@ -426,15 +1352,64 @@ function drawTrend(){
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(ctx, {
     type:'line',
-    data:{ labels:days, datasets:[{ data:vals, borderColor:'#f4b400', backgroundColor:'rgba(244,180,0,.15)', fill:true, tension:.35, borderWidth:3, pointRadius:5 }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
+    data:{ labels:days, datasets:[{ data:vals, borderColor:'#f4b400', backgroundColor:'rgba(244,180,0,.15)', fill:true, tension:.35, borderWidth:3, pointRadius:5, pointBackgroundColor:'#0b3d2e' }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100, ticks:{callback:v=>v+'%'}}}}
   });
 }
 
+/* ============================================================
+   WHATSAPP BANNER
+   ============================================================ */
+function renderWhatsAppBanner(){
+  const wrap = document.getElementById('waBannerWrap');
+  if (!wrap) return;
+  if (!whatsapp.link){ wrap.innerHTML = ''; return; }
+  const groupName = whatsapp.name || (currentClass + ' গ্রুপ');
+  wrap.innerHTML = `
+    <div class="wa-banner">
+      <div class="wa-icon">💬</div>
+      <div class="wa-info">
+        <h3>${escapeHtml(groupName)}</h3>
+        <p>ট্যাপ করে WhatsApp গ্রুপ খুলুন</p>
+      </div>
+      <div class="wa-actions">
+        <button class="btn primary" onclick="openWhatsAppGroup()">গ্রুপ খুলুন</button>
+      </div>
+    </div>`;
+}
+function openWhatsAppGroup(){
+  if (!whatsapp.link) return toast('গ্রুপ লিংক নেই','error');
+  window.open(whatsapp.link, '_blank');
+}
+
+/* ============================================================
+   STUDENTS
+   ============================================================ */
 function setFilter(f){
   filter = f;
   document.querySelectorAll('#filterChips .chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));
   renderStudents();
+}
+
+function getStudentStats(idx){
+  let p=0, a=0;
+  Object.keys(attendance).forEach(k=>{
+    const st = (attendance[k]||{})[idx];
+    if (st==='P') p++;
+    if (st==='A') a++;
+  });
+  const total = p+a;
+  const pct = total ? Math.round(p/total*100) : 0;
+  return { p, a, total, pct };
+}
+
+function getGrade(pct){
+  if (pct >= 90) return { label:'A+', cls:'grade-A' };
+  if (pct >= 80) return { label:'A',  cls:'grade-A' };
+  if (pct >= 70) return { label:'B',  cls:'grade-B' };
+  if (pct >= 60) return { label:'C',  cls:'grade-C' };
+  if (pct >= 50) return { label:'D',  cls:'grade-D' };
+  return { label:'F', cls:'grade-F' };
 }
 
 function renderStudents(){
@@ -458,20 +1433,267 @@ function renderStudents(){
   }
   list.innerHTML = filtered.map(s=>{
     const isAbsent = today[s._i]==='A';
-    return `<div class="student-row ${isAbsent?'absent':'present'}">
-      <div class="avatar ${isAbsent?'absent':''}">${escapeHtml((s.name||'?').charAt(0))}</div>
-      <div class="student-info">
-        <div class="name">${escapeHtml(s.name)}</div>
+    const stats = getStudentStats(s._i);
+    const grade = getGrade(stats.pct);
+    return `<div class="student-row ${isAbsent?'absent':'present'} student-card">
+      <div class="avatar ${isAbsent?'absent':''}" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">${escapeHtml((s.name||'?').charAt(0))}</div>
+      <div class="student-info" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">
+        <div class="name">${escapeHtml(s.name)}
+          <span class="grade-badge ${grade.cls}">${grade.label} • ${bn(stats.pct)}%</span>
+        </div>
         <div class="meta">রোল: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</div>
       </div>
       <div class="row-actions">
-        <button class="btn btn-info btn-sm" onclick="editStudent(${s._i})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s._i})">🗑️</button>
+        <button class="btn btn-purple btn-sm" onclick="event.stopPropagation();openReportCard(${s._i})" title="রিপোর্ট কার্ড">🖨️</button>
+        <button class="btn btn-info btn-sm" onclick="event.stopPropagation();editStudent(${s._i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteStudent(${s._i})">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
 
+/* ============================================================
+   STUDENT ANALYTICS
+   ============================================================ */
+function openStudentAnalytics(idx){
+  const s = students[idx];
+  if (!s) return;
+  const stats = getStudentStats(idx);
+  const grade = getGrade(stats.pct);
+
+  const monthsMap = {};
+  Object.keys(attendance).forEach(k=>{
+    const [y,m] = k.split('-');
+    const mk = y+'-'+String(m).padStart(2,'0');
+    if (!monthsMap[mk]) monthsMap[mk] = { p:0, a:0 };
+    const st = (attendance[k]||{})[idx];
+    if (st==='P') monthsMap[mk].p++;
+    if (st==='A') monthsMap[mk].a++;
+  });
+
+  let monthlyHtml = '';
+  Object.keys(monthsMap).sort().reverse().slice(0,6).forEach(mk=>{
+    const [y,m] = mk.split('-');
+    const label = new Date(y, m-1, 1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+    const { p, a } = monthsMap[mk];
+    const tot = p+a;
+    const pct = tot?Math.round(p/tot*100):0;
+    monthlyHtml += `<div class="analytics-cell"><div class="lbl">${label}</div><div class="num">${bn(pct)}%</div><div style="font-size:11px;color:var(--muted)">${bn(p)}✓ ${bn(a)}✗</div></div>`;
+  });
+
+  openModal(`
+    <div class="analytics-header">
+      <div class="analytics-avatar">${escapeHtml((s.name||'?').charAt(0))}</div>
+      <div class="analytics-info">
+        <h3>${escapeHtml(s.name)}</h3>
+        <p>রোল: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</p>
+        <p style="margin-top:4px"><span class="grade-badge ${grade.cls}">গ্রেড: ${grade.label}</span></p>
+      </div>
+    </div>
+    <div class="analytics-grid">
+      <div class="analytics-cell"><div class="lbl">উপস্থিত</div><div class="num" style="color:var(--success)">${bn(stats.p)}</div></div>
+      <div class="analytics-cell"><div class="lbl">অনুপস্থিত</div><div class="num" style="color:var(--danger)">${bn(stats.a)}</div></div>
+      <div class="analytics-cell"><div class="lbl">মোট দিন</div><div class="num">${bn(stats.total)}</div></div>
+      <div class="analytics-cell"><div class="lbl">উপস্থিতির হার</div><div class="num" style="color:var(--accent)">${bn(stats.pct)}%</div></div>
+    </div>
+    ${monthlyHtml ? `<h3 style="font-size:14px;margin-top:18px;margin-bottom:8px;color:var(--muted)">সাম্প্রতিক মাস</h3><div class="analytics-grid">${monthlyHtml}</div>` : ''}
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">বন্ধ</button>
+      <button class="btn btn-purple" onclick="closeModal();openReportCard(${idx})">🖨️ রিপোর্ট কার্ড</button>
+    </div>
+  `);
+}
+
+/* ============================================================
+   LEADERBOARD
+   ============================================================ */
+function renderLeaderboard(){
+  const sel = document.getElementById('monthSelect');
+  const mk = sel?.value;
+  const labelEl = document.getElementById('leaderMonth');
+  if (!mk){
+    labelEl.textContent = 'এই মাস';
+  } else {
+    const [y,m] = mk.split('-').map(Number);
+    labelEl.textContent = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+  }
+
+  if (!students.length){
+    document.getElementById('topList').innerHTML = '<div class="empty" style="padding:20px"><p>ডেটা নেই</p></div>';
+    document.getElementById('bottomList').innerHTML = '';
+    return;
+  }
+
+  const stats = students.map((s,i)=>{
+    let p=0, a=0;
+    Object.keys(attendance).forEach(k=>{
+      if (mk){
+        const [y,m] = k.split('-');
+        const curMk = y+'-'+String(m).padStart(2,'0');
+        if (curMk !== mk) return;
+      }
+      const st = (attendance[k]||{})[i];
+      if (st==='P') p++;
+      if (st==='A') a++;
+    });
+    const tot = p+a;
+    return { name:s.name, roll:s.roll, pct: tot?Math.round(p/tot*100):0, p, a };
+  }).sort((x,y)=>y.pct - x.pct);
+
+  const top = stats.slice(0,5);
+  const bottom = stats.slice(-5).reverse();
+
+  function row(item, rank, isTop){
+    const cls = isTop
+      ? (rank===1?'gold':rank===2?'silver':rank===3?'bronze':'')
+      : 'danger';
+    return `<div class="leader-item">
+      <div class="leader-rank ${cls}">${bn(rank)}</div>
+      <div class="leader-name">${escapeHtml(item.name)}</div>
+      <div class="leader-pct ${isTop?'':'low'}">${bn(item.pct)}%</div>
+    </div>`;
+  }
+
+  document.getElementById('topList').innerHTML = top.map((s,i)=>row(s,i+1,true)).join('');
+  document.getElementById('bottomList').innerHTML = bottom.map((s,i)=>row(s,i+1,false)).join('');
+}
+
+/* ============================================================
+   REPORT CARD
+   ============================================================ */
+function openReportCard(idx){
+  const s = students[idx];
+  if (!s) return;
+  const stats = getStudentStats(idx);
+  const grade = getGrade(stats.pct);
+  const monthLabel = new Date().toLocaleString('bn-BD',{month:'long',year:'numeric'});
+
+  const html = `
+    <div id="reportCard" style="background:#fff;color:#0f172a;padding:20px;border-radius:14px">
+      <div style="text-align:center;border-bottom:3px double #0b3d2e;padding-bottom:12px;margin-bottom:14px">
+        <img src="https://i.imgur.com/kthmVIB.png" style="width:60px;height:60px;border-radius:50%;border:2px solid #f4b400" onerror="this.style.display='none'">
+        <h2 style="color:#0b3d2e;font-size:16px;margin-top:6px">Momtaj Uddin Business Management College</h2>
+        <p style="font-size:12px;color:#64748b">উপস্থিতি রিপোর্ট কার্ড — ${monthLabel}</p>
+      </div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:14px">
+        <tr><td style="padding:5px;font-weight:600">নাম</td><td style="padding:5px">${escapeHtml(s.name)}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">রোল</td><td style="padding:5px">${escapeHtml(s.roll||'-')}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">শ্রেণি</td><td style="padding:5px">${escapeHtml(currentClass)}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">মোবাইল</td><td style="padding:5px">${escapeHtml(s.mobile||'-')}</td></tr>
+      </table>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#0b3d2e;color:#fff">
+            <th style="padding:8px">উপস্থিত</th>
+            <th style="padding:8px">অনুপস্থিত</th>
+            <th style="padding:8px">মোট দিন</th>
+            <th style="padding:8px">হার</th>
+            <th style="padding:8px">গ্রেড</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="text-align:center">
+            <td style="padding:10px;font-weight:700;color:#16a34a">${bn(stats.p)}</td>
+            <td style="padding:10px;font-weight:700;color:#e63946">${bn(stats.a)}</td>
+            <td style="padding:10px;font-weight:700">${bn(stats.total)}</td>
+            <td style="padding:10px;font-weight:700;color:#f4b400">${bn(stats.pct)}%</td>
+            <td style="padding:10px;font-weight:700">${grade.label}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:24px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
+        <div>তারিখ: ${bn(new Date().getDate())}/${bn(new Date().getMonth()+1)}/${bn(new Date().getFullYear())}</div>
+        <div>শিক্ষকের স্বাক্ষর: ________________</div>
+      </div>
+    </div>
+    <div class="modal-actions no-print">
+      <button class="btn btn-ghost" onclick="closeModal()">বন্ধ</button>
+      <button class="btn btn-primary" onclick="printReportCard()">🖨️ প্রিন্ট / PDF</button>
+    </div>
+  `;
+  openModal(html);
+}
+function printReportCard(){
+  const node = document.getElementById('reportCard');
+  if (!node) return;
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>Report Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body{font-family:'Hind Siliguri',sans-serif;padding:20px;color:#0f172a}
+      table{width:100%;border-collapse:collapse}
+      th,td{padding:8px;text-align:center}
+      thead tr{background:#0b3d2e;color:#fff}
+      h2{color:#0b3d2e}
+    </style></head><body>${node.outerHTML}</body></html>
+  `);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 300);
+}
+
+/* ============================================================
+   HEATMAP
+   ============================================================ */
+function renderHeatmap(){
+  const sel = document.getElementById('monthSelect');
+  const mk = sel?.value;
+  const grid = document.getElementById('heatmapGrid');
+  const labelEl = document.getElementById('heatMonth');
+  if (!mk){
+    grid.innerHTML = '';
+    return;
+  }
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  labelEl.textContent = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+
+  if (!students.length){
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><p>শিক্ষার্থী যোগ করুন</p></div>';
+    return;
+  }
+
+  let html = '';
+  for (let d=1; d<=days; d++){
+    const k = y+'-'+m+'-'+d;
+    const rec = attendance[k] || {};
+    let p=0;
+    students.forEach((_,i)=>{ if (rec[i]==='P') p++; });
+    const pct = students.length ? p/students.length : 0;
+    let level = 0;
+    if (pct > 0.9) level = 5;
+    else if (pct > 0.75) level = 4;
+    else if (pct > 0.5) level = 3;
+    else if (pct > 0.25) level = 2;
+    else if (pct > 0) level = 1;
+    const isToday = y===new Date().getFullYear() && m===new Date().getMonth()+1 && d===new Date().getDate();
+    html += `<div class="heat-cell l${level} ${isToday?'today':''}" title="${bn(d)} — ${bn(p)}/${bn(students.length)} (${bn(Math.round(pct*100))}%)"></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+function fireConfetti(count=80){
+  const box = document.getElementById('confettiBox');
+  if (!box) return;
+  for (let i=0; i<count; i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + '%';
+    c.style.animationDelay = Math.random()*0.5 + 's';
+    c.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    c.style.width = (6 + Math.random()*8) + 'px';
+    c.style.height = (6 + Math.random()*8) + 'px';
+    box.appendChild(c);
+    setTimeout(()=>c.remove(), 4000);
+  }
+}
+
+/* ============================================================
+   STUDENT MODAL / CRUD
+   ============================================================ */
 function openAddStudent(){
   openModal(`
     <h3>➕ নতুন শিক্ষার্থী</h3>
@@ -490,6 +1712,7 @@ function saveNewStudent(){
   const mobile=document.getElementById('mMobile').value.trim();
   if(!name) return toast('নাম দিন','error');
   if(roll && students.some(s=>s.roll===roll)) return toast('এই রোল আগেই আছে!','error');
+  pushHistory('students', JSON.parse(JSON.stringify(students)));
   students.push({name,roll,mobile});
   saveAll(); closeModal(); renderStudents(); renderDashboard();
   toast('✅ শিক্ষার্থী যোগ হয়েছে','success');
@@ -512,18 +1735,22 @@ function updateStudent(i){
   const mobile=document.getElementById('mMobile').value.trim();
   if(!name) return toast('নাম দিন','error');
   if(roll && students.some((s,idx)=>idx!==i && s.roll===roll)) return toast('এই রোল আগেই আছে!','error');
+  pushHistory('students', JSON.parse(JSON.stringify(students)));
   students[i]={name,roll,mobile};
   saveAll(); closeModal(); renderStudents(); renderDashboard();
   toast('✅ আপডেট হয়েছে','success');
 }
 function deleteStudent(i){
   if(!confirm('ডিলিট করবেন?')) return;
+  pushHistory('delete-student', i, JSON.parse(JSON.stringify(students[i])));
   students.splice(i,1);
   saveAll(); renderStudents(); renderDashboard();
-  toast('ডিলিট হয়েছে','info');
+  toast('ডিলিট হয়েছে — Undo চাপুন','info');
 }
 
-/* ================= MONTHLY (Now the only attendance UI) ================= */
+/* ============================================================
+   MONTHLY (HAZIRA)
+   ============================================================ */
 function initMonthly(){
   const sel = document.getElementById('monthSelect');
   const opts = []; const now = new Date();
@@ -574,7 +1801,6 @@ function renderMonthly(){
     h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
   });
 
-  /* Totals row — how many were present/absent each day */
   h += '<tr class="totals-row"><td class="name-col">📊 মোট</td><td>-</td>';
   for (let d=1; d<=days; d++){
     const k = y+'-'+m+'-'+d;
@@ -584,7 +1810,6 @@ function renderMonthly(){
     h += `<td>${p?bn(p):'-'}</td>`;
   }
   h += '<td colspan="3">-</td></tr>';
-
   h += '</tbody></table>';
   document.getElementById('monthlyTable').innerHTML = h;
 }
@@ -592,19 +1817,38 @@ function renderMonthly(){
 function toggleMonthCell(k,i){
   if (!attendance[k]) attendance[k]={};
   const cur = attendance[k][i];
-  if (!cur) attendance[k][i]='P';
-  else if (cur==='P') attendance[k][i]='A';
-  else delete attendance[k][i];
-  saveAll(); renderMonthly(); renderDashboard();
+  pushHistory('cell', k, i, cur);
+  if (cur === 'P') attendance[k][i] = 'A';
+  else attendance[k][i] = 'P';
+
+  if (k === todayKey()) checkAllPresentConfetti();
+
+  saveAll();
+  renderMonthly();
+  renderDashboard();
+}
+
+function checkAllPresentConfetti(){
+  const today = attendance[todayKey()] || {};
+  if (!students.length) return;
+  let allPresent = true;
+  students.forEach((_,i)=>{ if (today[i]==='A') allPresent = false; });
+  if (allPresent){
+    fireConfetti(120);
+    toast('🎉 সবাই আজ উপস্থিত!','success');
+  }
 }
 
 function markToday(type){
   if (!confirm(`আজকের সব শিক্ষার্থীকে ${type==='present'?'উপস্থিত':'অনুপস্থিত'} চিহ্নিত করবেন?`)) return;
   const k = todayKey();
+  const snapshot = attendance[k] ? JSON.parse(JSON.stringify(attendance[k])) : null;
+  pushHistory('bulk', k, snapshot);
   if (!attendance[k]) attendance[k]={};
   students.forEach((_,i)=>{ attendance[k][i] = type==='present'?'P':'A'; });
+  if (type === 'present') fireConfetti(100);
   saveAll(); renderMonthly(); renderDashboard();
-  toast('✅ সম্পন্ন','success');
+  toast('✅ সম্পন্ন — Undo চাপুন ফেরাতে','success');
 }
 
 function exportMonthly(){
@@ -628,7 +1872,52 @@ function exportMonthly(){
   toast('✅ Excel ডাউনলোড','success');
 }
 
-/* ================= RESULTS ================= */
+/* ============================================================
+   WHATSAPP SHARE
+   ============================================================ */
+function shareMonthlyWhatsApp(){
+  const mk = document.getElementById('monthSelect').value;
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  const monthLabel = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+  let msg = `📊 *হাজিরা রিপোর্ট*\n🏫 Momtaj Uddin Business Management College\n📚 ${currentClass} — ${monthLabel}\n\n`;
+  students.forEach((s,i)=>{
+    let p=0, a=0;
+    for (let d=1; d<=days; d++){
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
+      if (st==='P') p++; if (st==='A') a++;
+    }
+    const total = p+a;
+    const pct = total?Math.round(p/total*100):0;
+    msg += `• ${s.name}: ${p}✓ ${a}✗ (${pct}%)\n`;
+  });
+  if (whatsapp.link){
+    navigator.clipboard.writeText(msg).then(()=>{
+      toast('রিপোর্ট কপি হয়েছে','success');
+      window.open(whatsapp.link, '_blank');
+    }).catch(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); });
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+  }
+}
+
+function sendNoticeWhatsApp(){
+  const t = document.getElementById('noticeInput').value.trim();
+  if (!t) return toast('নোটিশ লিখুন','error');
+  const msg = `📢 *${currentClass}*\n\n${t}\n\n— Momtaj Uddin Business Management College`;
+  if (whatsapp.link){
+    navigator.clipboard.writeText(msg).then(()=>{
+      toast('নোটিশ কপি হয়েছে','success');
+      window.open(whatsapp.link, '_blank');
+    }).catch(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); });
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+  }
+}
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
 function renderResults(){
   if (!students.length){
     document.getElementById('resultTable').innerHTML = '<div class="empty"><div class="icon">🏆</div><p>শিক্ষার্থী নেই</p></div>';
@@ -655,7 +1944,9 @@ function renderResults(){
 function setSubName(i,v){ subNames[i]=v||('বিষয় '+(i+1)); saveAll(); }
 function setMark(i,j,v){ if(!results[i]) results[i]={}; results[i]['s'+j]=v; saveAll(); }
 
-/* ================= NOTICE ================= */
+/* ============================================================
+   NOTICE
+   ============================================================ */
 function addNotice(){
   const t = document.getElementById('noticeInput').value.trim();
   if (!t) return toast('নোটিশ লিখুন','error');
@@ -674,9 +1965,60 @@ function renderNotices(){
       <button class="del" onclick="deleteNotice(${i})">🗑️</button>
     </div>`).join('');
 }
-function deleteNotice(i){ notices.splice(i,1); saveAll(); renderNotices(); }
+function deleteNotice(i){
+  pushHistory('delete-notice', i, JSON.parse(JSON.stringify(notices[i])));
+  notices.splice(i,1);
+  saveAll(); renderNotices();
+  toast('ডিলিট — Undo চাপুন ফেরাতে','info');
+}
 
-/* ================= AUTO-LOGIN ================= */
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function renderSettings(){
+  const label = document.getElementById('waClassLabel');
+  if (label) label.textContent = currentClass;
+  const linkEl = document.getElementById('waGroupLink');
+  const nameEl = document.getElementById('waGroupName');
+  if (linkEl) linkEl.value = whatsapp.link || '';
+  if (nameEl) nameEl.value = whatsapp.name || '';
+}
+function saveWhatsAppSettings(){
+  const link = document.getElementById('waGroupLink').value.trim();
+  const name = document.getElementById('waGroupName').value.trim();
+  if (link && !link.startsWith('https://chat.whatsapp.com/') && !link.startsWith('https://wa.me/')) {
+    if (!confirm('এই লিংকটি WhatsApp এর মতো দেখাচ্ছে না। তবুও সেভ করবেন?')) return;
+  }
+  whatsapp = { link, name };
+  saveAll();
+  toast('✅ সেভ হয়েছে','success');
+  renderWhatsAppBanner();
+}
+function testWhatsAppLink(){
+  const link = document.getElementById('waGroupLink').value.trim();
+  if (!link) return toast('আগে লিংক দিন','error');
+  window.open(link, '_blank');
+}
+function clearWhatsAppSettings(){
+  if (!confirm('WhatsApp লিংক মুছবেন?')) return;
+  whatsapp = { link:'', name:'' };
+  saveAll();
+  renderSettings();
+  renderWhatsAppBanner();
+  toast('মুছে ফেলা হয়েছে','info');
+}
+function changePassword(){
+  const np = document.getElementById('newPass').value.trim();
+  if (np.length < 4) return toast('কমপক্ষে ৪ অক্ষর','error');
+  localStorage.setItem('cached_pass_'+currentClass, np);
+  window.fbFns.setDoc(cloudRef(), { password: np }, { merge: true })
+    .then(()=>{ toast('✅ পাসওয়ার্ড পরিবর্তন','success'); document.getElementById('newPass').value=''; })
+    .catch(e=>{ console.error(e); toast('❌ ব্যর্থ','error'); });
+}
+
+/* ============================================================
+   AUTO LOGIN
+   ============================================================ */
 window.addEventListener('load', async ()=>{
   const s = localStorage.getItem('session');
   if (s && fbReady){
