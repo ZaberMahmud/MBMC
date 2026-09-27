@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Momtaj Uddin Business Management College — Cloud</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ============ YOUR FIREBASE CONFIG ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyCXOyZ9cSZNRQhkcvDEoGJIPNOfnB5-V84",
+  authDomain: "momtaj-college.firebaseapp.com",
+  projectId: "momtaj-college",
+  storageBucket: "momtaj-college.firebasestorage.app",
+  messagingSenderId: "813503183739",
+  appId: "1:813503183739:web:a8e44c89129fb1483c9bde"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db = db;
+window.fbFns = { doc, getDoc, setDoc, onSnapshot, serverTimestamp };
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+:root{--primary:#0b3d2e;--primary-light:#16543f;--accent:#f4b400;--accent-2:#ff8c00;--danger:#e63946;--success:#16a34a;--info:#2563eb;--bg:#f4f6fb;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--shadow:0 4px 24px rgba(11,61,46,.08);--shadow-lg:0 20px 40px rgba(11,61,46,.15)}
+[data-theme="dark"]{--bg:#0a1628;--card:#132135;--text:#e2e8f0;--muted:#94a3b8;--border:#1e3a5f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hind Siliguri',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,select,textarea{font-family:inherit;font-size:15px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none}
+.hidden{display:none!important}
+.btn{width:100%;padding:14px;border-radius:12px;font-weight:700;font-size:15px}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff}
+.btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0b3d2e}
+.btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-info{background:var(--info);color:#fff}
+.btn-sm{padding:8px 12px;font-size:13px;border-radius:9px;width:auto}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#0b3d2e,#16543f,#0a2342);position:relative}
+.login-wrap::before{content:'';position:absolute;inset:0;background:url('https://i.imgur.com/5AHn1Rk.png') center/cover;opacity:.15}
+.login-card{position:relative;background:var(--card);border-radius:24px;padding:36px 28px;width:100%;max-width:420px;box-shadow:var(--shadow-lg)}
+.login-logo{width:110px;height:110px;border-radius:50%;border:4px solid var(--accent);object-fit:cover;display:block;margin:0 auto 16px;background:#fff;padding:4px}
+.login-title{text-align:center;font-size:18px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.login-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px}
+.login-card label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px}
+.sync-status{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--muted);margin-top:14px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite}
+.sync-dot.online{background:var(--success);animation:none}
+.sync-dot.offline{background:var(--danger);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.app{display:none;min-height:100vh;flex-direction:column}
+.app.active{display:flex}
+.topbar{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+.topbar img.logo{width:46px;height:46px;border-radius:50%;border:2.5px solid var(--accent);object-fit:cover;background:#fff}
+.topbar-info{flex:1;min-width:0}
+.topbar-info h1{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-info p{font-size:11px;opacity:.85}
+.topbar-actions{display:flex;gap:6px}
+.icon-btn{background:rgba(255,255,255,.15);color:#fff;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.icon-btn:hover{background:rgba(255,255,255,.28)}
+.tabs{display:flex;gap:4px;padding:10px 14px 0;background:var(--card);border-bottom:1.5px solid var(--border);overflow-x:auto;position:sticky;top:70px;z-index:40}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 16px;border-radius:12px 12px 0 0;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1.5px}
+.tab.active{color:var(--primary);border-bottom-color:var(--accent)}
+main{padding:16px;max-width:1100px;margin:0 auto;width:100%;flex:1}
+.view{display:none}
+.view.active{display:block;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px}
+.card h2{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--primary)}
+[data-theme="dark"] .card h2{color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--shadow);border-left:4px solid var(--accent)}
+.stat .label{font-size:12px;color:var(--muted);font-weight:600}
+.stat .value{font-size:28px;font-weight:700;color:var(--primary);margin-top:4px}
+[data-theme="dark"] .stat .value{color:var(--accent)}
+.stat.green{border-left-color:var(--success)}
+.stat.red{border-left-color:var(--danger)}
+.stat.blue{border-left-color:var(--info)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.search{flex:1;min-width:180px;position:relative}
+.search input{padding-left:38px}
+.search::before{content:'🔍';position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.6}
+.student-row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1.5px solid var(--border);margin-bottom:8px;background:var(--card)}
+.student-row.absent{background:linear-gradient(90deg,rgba(230,57,70,.08),transparent);border-color:rgba(230,57,70,.3)}
+.student-row.present{background:linear-gradient(90deg,rgba(22,163,74,.06),transparent);border-color:rgba(22,163,74,.25)}
+.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0}
+.avatar.absent{background:linear-gradient(135deg,var(--danger),#b91c1c)}
+.student-info{flex:1;min-width:0}
+.student-info .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.student-info .meta{font-size:12px;color:var(--muted);margin-top:2px}
+.row-actions{display:flex;gap:6px}
+.att-toggle{width:52px;height:32px;border-radius:16px;background:#cbd5e1;position:relative;transition:background .25s;flex-shrink:0;cursor:pointer}
+.att-toggle.on{background:var(--success)}
+.att-toggle::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.att-toggle.on::after{transform:translateX(20px)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--card);border:1.5px solid var(--border);color:var(--muted)}
+.chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.chip .count{background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;font-size:11px;margin-left:5px}
+.chip:not(.active) .count{background:var(--bg)}
+.table-wrap{overflow:auto;border-radius:12px;border:1.5px solid var(--border);max-height:60vh}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
+th{background:var(--primary);color:#fff;font-weight:600;position:sticky;top:0;z-index:2}
+td{background:var(--card)}
+td.name-col{text-align:left;font-weight:600}
+.cell-P{color:var(--success);font-weight:700;cursor:pointer}
+.cell-A{color:var(--danger);font-weight:700;cursor:pointer}
+.today-col{background:rgba(244,180,0,.15)!important;font-weight:700}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:460px;box-shadow:var(--shadow-lg);max-height:90vh;overflow:auto}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:16px;color:var(--primary)}
+[data-theme="dark"] .modal h3{color:var(--accent)}
+.modal label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 6px}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.modal-actions .btn{flex:1}
+.notice-item{padding:12px;border-radius:12px;background:linear-gradient(135deg,rgba(244,180,0,.1),transparent);border-left:4px solid var(--accent);margin-bottom:8px;display:flex;justify-content:space-between;gap:10px}
+.notice-item .text{flex:1;font-size:14px}
+.notice-item .time{font-size:11px;color:var(--muted)}
+.notice-item .del{background:transparent;color:var(--danger);font-size:16px;padding:4px 8px;cursor:pointer}
+.chart-box{position:relative;height:240px;margin-top:8px}
+.toast{position:fixed;top:20px;right:20px;background:var(--primary);color:#fff;padding:14px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);z-index:1000;max-width:340px}
+.toast.error{background:var(--danger)}
+.toast.success{background:var(--success)}
+.toast.info{background:var(--info)}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty .icon{font-size:48px;margin-bottom:12px;opacity:.5}
+.live-badge{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;z-index:99}
+.live-badge .dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse 1.5s infinite}
+@media(max-width:640px){main{padding:12px}.card{padding:14px}.topbar-info h1{font-size:13px}.stat .value{font-size:22px}}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <img class="login-logo" src="https://i.imgur.com/kthmVIB.png" onerror="this.src='https://via.placeholder.com/110'">
+    <div class="login-title">Momtaj Uddin Business Management College</div>
+    <div class="login-sub">☁️ ক্লাউড সিঙ্ক সংস্করণ</div>
+    <label>শ্রেণি নির্বাচন করুন</label>
+    <select id="loginClass">
+      <option value="">-- শ্রেণি --</option>
+      <option>১ম শ্রেণি</option><option>২য় শ্রেণি</option><option>৩য় শ্রেণি</option>
+      <option>৪র্থ শ্রেণি</option><option>৫ম শ্রেণি</option><option>৬ষ্ঠ শ্রেণি</option>
+      <option>৭ম শ্রেণি</option><option>৮ম শ্রেণি</option><option>৯ম শ্রেণি</option><option>১০ম শ্রেণি</option>
+    </select>
+    <label>পাসওয়ার্ড</label>
+    <input type="password" id="loginPass" placeholder="ডিফল্ট: admin123">
+    <div style="margin-top:20px">
+      <button class="btn btn-primary" onclick="doLogin()">🔐 লগইন করুন</button>
+    </div>
+    <div class="sync-status">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncText">Firebase সংযোগ পরীক্ষা হচ্ছে...</span>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <img class="logo" src="https://i.imgur.com/kthmVIB.png" onerror="this.src='https://via.placeholder.com/46'">
+    <div class="topbar-info">
+      <h1>Momtaj Uddin Business Management College</h1>
+      <p>শ্রেণি: <b id="topClass"></b></p>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="toggleTheme()">🌙</button>
+      <button class="icon-btn" onclick="logout()">⏻</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 ড্যাশবোর্ড</button>
+    <button class="tab" data-tab="students" onclick="switchTab('students')">👥 শিক্ষার্থী</button>
+    <button class="tab" data-tab="attendance" onclick="switchTab('attendance')">📅 হাজিরা</button>
+    <button class="tab" data-tab="monthly" onclick="switchTab('monthly')">🗓️ মাসিক</button>
+    <button class="tab" data-tab="results" onclick="switchTab('results')">🏆 ফলাফল</button>
+    <button class="tab" data-tab="notice" onclick="switchTab('notice')">📢 নোটিশ</button>
+  </div>
+
+  <main>
+    <section class="view active" id="view-dashboard">
+      <div class="stats">
+        <div class="stat"><div class="label">মোট শিক্ষার্থী</div><div class="value" id="stTotal">0</div></div>
+        <div class="stat green"><div class="label">আজ উপস্থিত</div><div class="value" id="stPresent">0</div></div>
+        <div class="stat red"><div class="label">আজ অনুপস্থিত</div><div class="value" id="stAbsent">0</div></div>
+        <div class="stat blue"><div class="label">উপস্থিতির হার</div><div class="value" id="stRate">0%</div></div>
+      </div>
+      <div class="card"><h2>📈 সাপ্তাহিক ট্রেন্ড</h2><div class="chart-box"><canvas id="trendChart"></canvas></div></div>
+    </section>
+
+    <section class="view" id="view-students">
+      <div class="card">
+        <h2>👥 শিক্ষার্থী</h2>
+        <div class="toolbar">
+          <div class="search"><input id="searchBox" placeholder="খুঁজুন..." oninput="renderStudents()"></div>
+          <button class="btn btn-accent btn-sm" onclick="openAddStudent()">➕ নতুন</button>
+        </div>
+        <div class="chips" id="filterChips">
+          <button class="chip active" data-filter="all" onclick="setFilter('all')">সবাই <span class="count" id="cAll">0</span></button>
+          <button class="chip" data-filter="present" onclick="setFilter('present')">উপস্থিত <span class="count" id="cPresent">0</span></button>
+          <button class="chip" data-filter="absent" onclick="setFilter('absent')">অনুপস্থিত <span class="count" id="cAbsent">0</span></button>
+        </div>
+        <div id="studentList"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-attendance">
+      <div class="card">
+        <h2>📅 হাজিরা — <span id="attDate"></span></h2>
+        <div class="toolbar">
+          <input type="date" id="attDatePicker" style="flex:1;min-width:160px" onchange="changeAttDate()">
+          <button class="btn btn-success btn-sm" onclick="bulkMark('present')">✅ সবাই</button>
+          <button class="btn btn-danger btn-sm" onclick="bulkMark('absent')">❌ সবাই</button>
+        </div>
+        <div id="attList"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-monthly">
+      <div class="card">
+        <h2>🗓️ মাসিক হাজিরা</h2>
+        <div class="toolbar">
+          <select id="monthSelect" onchange="renderMonthly()" style="flex:1"></select>
+          <button class="btn btn-success btn-sm" onclick="exportMonthly()">📥 Excel</button>
+        </div>
+        <div class="table-wrap" id="monthlyTable"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-results">
+      <div class="card">
+        <h2>🏆 ফলাফল</h2>
+        <div class="table-wrap" id="resultTable"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-notice">
+      <div class="card">
+        <h2>📢 নোটিশ</h2>
+        <textarea id="noticeInput" rows="3" placeholder="নোটিশ লিখুন..."></textarea>
+        <button class="btn btn-accent" style="margin-top:10px" onclick="addNotice()">📌 যোগ করুন</button>
+      </div>
+      <div class="card"><h2>📋 নোটিশ বোর্ড</h2><div id="noticeList"></div></div>
+    </section>
+  </main>
+</div>
+
+<div id="modalRoot"></div>
+<div class="live-badge hidden" id="liveBadge"><span class="dot"></span> Live Sync</div>
+
+<script>
+let currentClass = '';
+let students = [], attendance = {}, results = {}, notices = [];
+let subNames = ['বিষয় 1','বিষয় 2','বিষয় 3','বিষয় 4','বিষয় 5','বিষয় 6','বিষয় 7','বিষয় 8','বিষয় 9','বিষয় 10','বিষয় 11','বিষয় 12','বিষয় 13'];
+let filter = 'all';
+let trendChart = null;
+let attDateKey = todayKey();
+let fbReady = false;
+let unsubListener = null;
+let pushTimer = null;
+let isRemoteUpdate = false;
+const DEFAULT_PASS = 'admin123';
+
+window.addEventListener('firebase-ready', ()=>{ fbReady = true; checkCloud(); });
+
+async function checkCloud(){
+  const dot = document.getElementById('syncDot');
+  const text = document.getElementById('syncText');
+  try {
+    await window.fbFns.setDoc(window.fbFns.doc(window.db,'system','ping'), {lastCheck: Date.now()});
+    dot.className = 'sync-dot online';
+    text.textContent = '☁️ ক্লাউড সংযুক্ত';
+  } catch(err){
+    dot.className = 'sync-dot offline';
+    text.textContent = '❌ Firebase সংযোগ ব্যর্থ';
+    console.error(err);
+  }
+}
+
+function cloudRef(){ return window.fbFns.doc(window.db, 'classes', currentClass); }
+
+async function loadFromCloud(){
+  const snap = await window.fbFns.getDoc(cloudRef());
+  if (snap.exists()){
+    const d = snap.data();
+    students = d.students || [];
+    attendance = d.attendance || {};
+    results = d.results || {};
+    notices = d.notices || [];
+    subNames = d.subNames || subNames;
+    if (d.password) localStorage.setItem('cached_pass_'+currentClass, d.password);
+  } else {
+    await window.fbFns.setDoc(cloudRef(), {
+      students: [], attendance: {}, results: {}, notices: [],
+      subNames, password: DEFAULT_PASS, createdAt: window.fbFns.serverTimestamp()
+    });
+    students=[]; attendance={}; results={}; notices=[];
+  }
+}
+
+async function saveToCloud(){
+  if (!currentClass || !fbReady) return;
+  try {
+    await window.fbFns.setDoc(cloudRef(), {
+      students, attendance, results, notices, subNames,
+      updatedAt: window.fbFns.serverTimestamp()
+    }, { merge: true });
+  } catch(err){ console.error(err); toast('☁️ সেভ ব্যর্থ','error'); }
+}
+
+function saveAll(){
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(saveToCloud, 300);
+}
+
+function startLiveSync(){
+  if (unsubListener) unsubListener();
+  unsubListener = window.fbFns.onSnapshot(cloudRef(), (snap)=>{
+    if (!snap.exists()) return;
+    const d = snap.data();
+    isRemoteUpdate = true;
+    students = d.students || [];
+    attendance = d.attendance || {};
+    results = d.results || {};
+    notices = d.notices || [];
+    subNames = d.subNames || subNames;
+    isRemoteUpdate = false;
+    const active = document.querySelector('.view.active')?.id;
+    if (active === 'view-dashboard') renderDashboard();
+    if (active === 'view-students') renderStudents();
+    if (active === 'view-attendance') renderAttendance();
+    if (active === 'view-monthly') renderMonthly();
+    if (active === 'view-notice') renderNotices();
+  });
+}
+
+function todayKey(d=new Date()){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function bn(n){ return String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]); }
+function fmtDate(k){ const [y,m,d]=k.split('-'); return bn(d)+'/'+bn(m)+'/'+bn(y); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg,type='success'){
+  const t=document.createElement('div');
+  t.className='toast '+type; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2800);
+}
+function openModal(html){ document.getElementById('modalRoot').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',cur);
+  localStorage.setItem('theme',cur);
+}
+document.documentElement.setAttribute('data-theme', localStorage.getItem('theme')||'light');
+
+async function doLogin(){
+  if (!fbReady) return toast('☁️ সংযোগ তৈরি হচ্ছে','info');
+  const cls = document.getElementById('loginClass').value;
+  const pw = document.getElementById('loginPass').value;
+  if (!cls) return toast('শ্রেণি সিলেক্ট করুন','error');
+  currentClass = cls;
+  toast('☁️ লোড হচ্ছে...','info');
+  try {
+    await loadFromCloud();
+    const storedPass = localStorage.getItem('cached_pass_'+currentClass) || DEFAULT_PASS;
+    if (pw !== storedPass) { currentClass=''; return toast('ভুল পাসওয়ার্ড!','error'); }
+    localStorage.setItem('session', cls);
+    document.getElementById('loginWrap').classList.add('hidden');
+    document.getElementById('app').classList.add('active');
+    document.getElementById('topClass').textContent = cls;
+    document.getElementById('liveBadge').classList.remove('hidden');
+    startLiveSync();
+    switchTab('dashboard');
+    toast('✅ লগইন সফল','success');
+  } catch(err){
+    currentClass='';
+    console.error(err);
+    toast('❌ সংযোগ ব্যর্থ','error');
+  }
+}
+
+function logout(){
+  if (!confirm('লগআউট?')) return;
+  if (unsubListener) unsubListener();
+  localStorage.removeItem('session');
+  location.reload();
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
+  if (name==='dashboard') renderDashboard();
+  if (name==='students')  renderStudents();
+  if (name==='attendance')renderAttendance();
+  if (name==='monthly')   initMonthly();
+  if (name==='results')   renderResults();
+  if (name==='notice')    renderNotices();
+}
+
+function renderDashboard(){
+  const t = students.length;
+  const today = attendance[attDateKey] || {};
+  let p=0, a=0;
+  students.forEach((_,i)=>{ if (today[i]==='A') a++; else p++; });
+  document.getElementById('stTotal').textContent = bn(t);
+  document.getElementById('stPresent').textContent = bn(p);
+  document.getElementById('stAbsent').textContent = bn(a);
+  document.getElementById('stRate').textContent = bn(t?Math.round(p/t*100):0)+'%';
+  drawTrend();
+}
+function drawTrend(){
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+  const days=[], vals=[];
+  for (let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = todayKey(d);
+    const rec = attendance[k] || {};
+    let p=0, tot=0;
+    students.forEach((_,idx)=>{ if(rec[idx]){ tot++; if(rec[idx]==='P') p++; } });
+    days.push(bn(d.getDate())+'/'+bn(d.getMonth()+1));
+    vals.push(tot?Math.round(p/tot*100):0);
+  }
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels:days, datasets:[{ data:vals, borderColor:'#f4b400', backgroundColor:'rgba(244,180,0,.15)', fill:true, tension:.35, borderWidth:3, pointRadius:5 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
+  });
+}
+
+function setFilter(f){
+  filter = f;
+  document.querySelectorAll('#filterChips .chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));
+  renderStudents();
+}
+
+function renderStudents(){
+  const q = (document.getElementById('searchBox').value||'').toLowerCase().trim();
+  const list = document.getElementById('studentList');
+  const today = attendance[attDateKey] || {};
+  let present=0, absent=0;
+  students.forEach((_,i)=>{ if (today[i]==='A') absent++; else present++; });
+  document.getElementById('cAll').textContent = bn(students.length);
+  document.getElementById('cPresent').textContent = bn(present);
+  document.getElementById('cAbsent').textContent = bn(absent);
+
+  let filtered = students.map((s,i)=>({...s,_i:i}));
+  if (filter==='present') filtered = filtered.filter(s=>today[s._i]!=='A');
+  if (filter==='absent')  filtered = filtered.filter(s=>today[s._i]==='A');
+  if (q) filtered = filtered.filter(s=> (s.name||'').toLowerCase().includes(q) || (s.roll||'').toLowerCase().includes(q) || (s.mobile||'').toLowerCase().includes(q));
+
+  if (!filtered.length){
+    list.innerHTML = '<div class="empty"><div class="icon">👥</div><p>কোনো শিক্ষার্থী নেই</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(s=>{
+    const isAbsent = today[s._i]==='A';
+    return `<div class="student-row ${isAbsent?'absent':'present'}">
+      <div class="avatar ${isAbsent?'absent':''}">${escapeHtml((s.name||'?').charAt(0))}</div>
+      <div class="student-info">
+        <div class="name">${escapeHtml(s.name)}</div>
+        <div class="meta">রোল: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</div>
+      </div>
+      <div class="row-actions">
+        <button class="btn btn-info btn-sm" onclick="editStudent(${s._i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s._i})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddStudent(){
+  openModal(`
+    <h3>➕ নতুন শিক্ষার্থী</h3>
+    <label>নাম *</label><input id="mName" placeholder="শিক্ষার্থীর নাম">
+    <label>রোল</label><input id="mRoll" placeholder="রোল নম্বর">
+    <label>মোবাইল</label><input id="mMobile" placeholder="01XXXXXXXXX">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
+      <button class="btn btn-primary" onclick="saveNewStudent()">✅ যোগ করুন</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('mName').focus(),100);
+}
+function saveNewStudent(){
+  const name=document.getElementById('mName').value.trim();
+  const roll=document.getElementById('mRoll').value.trim();
+  const mobile=document.getElementById('mMobile').value.trim();
+  if(!name) return toast('নাম দিন','error');
+  if(roll && students.some(s=>s.roll===roll)) return toast('এই রোল আগেই আছে!','error');
+  students.push({name,roll,mobile});
+  saveAll(); closeModal(); renderStudents(); renderDashboard();
+  toast('✅ শিক্ষার্থী যোগ হয়েছে','success');
+}
+function editStudent(i){
+  const s=students[i];
+  openModal(`
+    <h3>✏️ সম্পাদনা</h3>
+    <label>নাম</label><input id="mName" value="${escapeHtml(s.name)}">
+    <label>রোল</label><input id="mRoll" value="${escapeHtml(s.roll||'')}">
+    <label>মোবাইল</label><input id="mMobile" value="${escapeHtml(s.mobile||'')}">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
+      <button class="btn btn-primary" onclick="updateStudent(${i})">💾 সেভ</button>
+    </div>`);
+}
+function updateStudent(i){
+  const name=document.getElementById('mName').value.trim();
+  const roll=document.getElementById('mRoll').value.trim();
+  const mobile=document.getElementById('mMobile').value.trim();
+  if(!name) return toast('নাম দিন','error');
+  if(roll && students.some((s,idx)=>idx!==i && s.roll===roll)) return toast('এই রোল আগেই আছে!','error');
+  students[i]={name,roll,mobile};
+  saveAll(); closeModal(); renderStudents(); renderDashboard();
+  toast('✅ আপডেট হয়েছে','success');
+}
+function deleteStudent(i){
+  if(!confirm('ডিলিট করবেন?')) return;
+  students.splice(i,1);
+  saveAll(); renderStudents(); renderDashboard();
+  toast('ডিলিট হয়েছে','info');
+}
+
+function renderAttendance(){
+  document.getElementById('attDate').textContent = fmtDate(attDateKey);
+  document.getElementById('attDatePicker').value = attDateKey;
+  const rec = attendance[attDateKey] || {};
+  const list = document.getElementById('attList');
+  if (!students.length){
+    list.innerHTML = '<div class="empty"><div class="icon">👥</div><p>শিক্ষার্থী যোগ করুন</p></div>';
+    return;
+  }
+  list.innerHTML = students.map((s,i)=>{
+    const status = rec[i] || 'P';
+    const isOn = status !== 'A';
+    return `<div class="student-row ${isOn?'present':'absent'}">
+      <div class="avatar ${isOn?'':'absent'}">${escapeHtml((s.name||'?').charAt(0))}</div>
+      <div class="student-info">
+        <div class="name">${escapeHtml(s.name)}</div>
+        <div class="meta">রোল: ${escapeHtml(s.roll||'-')}</div>
+      </div>
+      <div class="att-toggle ${isOn?'on':''}" onclick="toggleAtt(${i})"></div>
+    </div>`;
+  }).join('');
+}
+function toggleAtt(i){
+  if(!attendance[attDateKey]) attendance[attDateKey]={};
+  const cur = attendance[attDateKey][i];
+  attendance[attDateKey][i] = cur === 'A' ? 'P' : 'A';
+  saveAll(); renderAttendance(); renderDashboard();
+}
+function bulkMark(type){
+  if(!confirm('নিশ্চিত?')) return;
+  if(!attendance[attDateKey]) attendance[attDateKey]={};
+  students.forEach((_,i)=>{ attendance[attDateKey][i] = type==='present'?'P':'A'; });
+  saveAll(); renderAttendance(); renderDashboard();
+  toast('✅ সম্পন্ন','success');
+}
+function changeAttDate(){
+  attDateKey = document.getElementById('attDatePicker').value;
+  renderAttendance();
+}
+
+function initMonthly(){
+  const sel = document.getElementById('monthSelect');
+  const opts = []; const now = new Date();
+  for (let i=0;i<12;i++){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const label = d.toLocaleString('bn-BD',{month:'long',year:'numeric'});
+    opts.push(`<option value="${k}">${label}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+  renderMonthly();
+}
+function renderMonthly(){
+  const mk = document.getElementById('monthSelect').value;
+  if (!mk) return;
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  document.getElementById('monthlyTable').innerHTML = '';
+  if (!students.length){
+    document.getElementById('monthlyTable').innerHTML = '<div class="empty"><div class="icon">📅</div><p>শিক্ষার্থী নেই</p></div>';
+    return;
+  }
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear()===y && today.getMonth()+1===m);
+  let h = '<table><thead><tr><th>নাম</th><th>রোল</th>';
+  for (let d=1; d<=days; d++){
+    const isToday = isCurrentMonth && today.getDate()===d;
+    h += `<th class="${isToday?'today-col':''}">${bn(d)}</th>`;
+  }
+  h += '<th>P</th><th>A</th><th>%</th></tr></thead><tbody>';
+  students.forEach((s,i)=>{
+    let p=0, a=0;
+    h += `<tr><td class="name-col">${escapeHtml(s.name)}</td><td>${escapeHtml(s.roll||'-')}</td>`;
+    for (let d=1; d<=days; d++){
+      const k = y+'-'+m+'-'+d;
+      const st = (attendance[k]||{})[i] || '';
+      if (st==='P') p++; if (st==='A') a++;
+      const isToday = isCurrentMonth && today.getDate()===d;
+      h += `<td class="${st==='P'?'cell-P':st==='A'?'cell-A':''} ${isToday?'today-col':''}" onclick="toggleMonthCell('${k}',${i})">${st==='P'?'✓':st==='A'?'✗':'-'}</td>`;
+    }
+    const total = p+a;
+    const pct = total?Math.round(p/total*100):0;
+    h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
+  });
+  h += '</tbody></table>';
+  document.getElementById('monthlyTable').innerHTML = h;
+}
+function toggleMonthCell(k,i){
+  if (!attendance[k]) attendance[k]={};
+  const cur = attendance[k][i];
+  if (!cur) attendance[k][i]='P';
+  else if (cur==='P') attendance[k][i]='A';
+  else delete attendance[k][i];
+  saveAll(); renderMonthly();
+}
+
+function renderResults(){
+  if (!students.length){
+    document.getElementById('resultTable').innerHTML = '<div class="empty"><div class="icon">🏆</div><p>শিক্ষার্থী নেই</p></div>';
+    return;
+  }
+  let h = '<table><thead><tr><th>নাম</th><th>রোল</th>';
+  for (let i=0;i<13;i++) h += `<th><input value="${escapeHtml(subNames[i].startsWith('বিষয়')?'':subNames[i])}" placeholder="বিষয় ${bn(i+1)}" oninput="setSubName(${i},this.value)" style="width:80px;padding:4px;background:transparent;color:#fff;border:none;text-align:center;font-weight:600"></th>`;
+  h += '<th>মোট</th><th>GPA</th></tr></thead><tbody>';
+  students.forEach((s,i)=>{
+    const r = results[i]||{};
+    let total=0, count=0;
+    h += `<tr><td class="name-col">${escapeHtml(s.name)}</td><td>${escapeHtml(s.roll||'-')}</td>`;
+    for (let j=0;j<13;j++){
+      const v = r['s'+j]||'';
+      if (v!==''){ total+=Number(v); count++; }
+      h += `<td><input type="number" min="0" max="100" value="${v}" oninput="setMark(${i},${j},this.value)" style="width:55px;padding:5px;text-align:center"></td>`;
+    }
+    const gpa = count?Math.min(5,(total/count/20)).toFixed(2):'0.00';
+    h += `<td><b>${bn(total)}</b></td><td><b style="color:var(--success)">${bn(gpa)}</b></td></tr>`;
+  });
+  h += '</tbody></table>';
+  document.getElementById('resultTable').innerHTML = h;
+}
+function setSubName(i,v){ subNames[i]=v||('বিষয় '+(i+1)); saveAll(); }
+function setMark(i,j,v){ if(!results[i]) results[i]={}; results[i]['s'+j]=v; saveAll(); }
+
+function addNotice(){
+  const t = document.getElementById('noticeInput').value.trim();
+  if (!t) return toast('নোটিশ লিখুন','error');
+  notices.unshift({text:t,time:new Date().toLocaleString('bn-BD')});
+  saveAll();
+  document.getElementById('noticeInput').value='';
+  renderNotices();
+  toast('✅ নোটিশ যোগ হয়েছে','success');
+}
+function renderNotices(){
+  const l = document.getElementById('noticeList');
+  if (!notices.length){ l.innerHTML='<div class="empty"><div class="icon">📢</div><p>কোনো নোটিশ নেই</p></div>'; return; }
+  l.innerHTML = notices.map((n,i)=>`
+    <div class="notice-item">
+      <div class="text">${escapeHtml(n.text)}<div class="time">${escapeHtml(n.time)}</div></div>
+      <button class="del" onclick="deleteNotice(${i})">🗑️</button>
+    </div>`).join('');
+}
+function deleteNotice(i){ notices.splice(i,1); saveAll(); renderNotices(); }
+
+function exportMonthly(){
+  const mk = document.getElementById('monthSelect').value;
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  const rows = students.map((s,i)=>{
+    const row = {নাম:s.name, রোল:s.roll};
+    let p=0,a=0;
+    for (let d=1; d<=days; d++){
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
+      row[bn(d)] = st; if(st==='P')p++; if(st==='A')a++;
+    }
+    row['মোট P']=p; row['মোট A']=a;
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Monthly');
+  XLSX.writeFile(wb, `Monthly_${currentClass}_${mk}.xlsx`);
+  toast('✅ Excel ডাউনলোড','success');
+}
+
+/* Auto-login if session exists */
+window.addEventListener('load', async ()=>{
+  const s = localStorage.getItem('session');
+  if (s && fbReady){
+    currentClass = s;
+    try {
+      await loadFromCloud();
+      document.getElementById('loginWrap').classList.add('hidden');
+      document.getElementById('app').classList.add('active');
+      document.getElementById('topClass').textContent = s;
+      document.getElementById('liveBadge').classList.remove('hidden');
+      startLiveSync();
+      switchTab('dashboard');
+    } catch(e){ console.error(e); }
+  }
+});
+</script>
+</body>
+</html>
