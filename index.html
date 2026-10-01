@@ -229,6 +229,29 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none
 }
 .a11y-item.reset:active .icon{animation-play-state:running}
 
+/* Language selector pill */
+.a11y-lang-pills{
+  display:flex;
+  gap:6px;
+  flex-shrink:0;
+}
+.a11y-lang-pills button{
+  padding:5px 12px;
+  border-radius:20px;
+  background:rgba(255,255,255,.2);
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  border:1.5px solid transparent;
+}
+.a11y-lang-pills button:hover{background:rgba(255,255,255,.35)}
+.a11y-lang-pills button.active{
+  background:#fff;
+  color:#dc2626;
+}
+
 /* ================= BODY ACCESSIBILITY STATES ================= */
 body.a11y-grayscale{filter:grayscale(1)}
 body.a11y-grayscale .a11y-panel,
@@ -270,7 +293,6 @@ body.a11y-readable *{
   letter-spacing:.5px!important;
 }
 
-/* Color blind filters using SVG */
 body.a11y-protanopia{filter:url('#protanopia-filter')}
 body.a11y-deuteranopia{filter:url('#deuteranopia-filter')}
 body.a11y-tritanopia{filter:url('#tritanopia-filter')}
@@ -506,29 +528,17 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 </head>
 <body>
 
-<!-- ================= SVG Color Blind Filters (hidden) ================= -->
+<!-- ================= SVG Color Blind Filters ================= -->
 <svg style="position:absolute;width:0;height:0" aria-hidden="true">
   <defs>
     <filter id="protanopia-filter">
-      <feColorMatrix type="matrix" values="
-        0.567 0.433 0 0 0
-        0.558 0.442 0 0 0
-        0 0.242 0.758 0 0
-        0 0 0 1 0"/>
+      <feColorMatrix type="matrix" values="0.567 0.433 0 0 0 0.558 0.442 0 0 0 0 0.242 0.758 0 0 0 0 0 1 0"/>
     </filter>
     <filter id="deuteranopia-filter">
-      <feColorMatrix type="matrix" values="
-        0.625 0.375 0 0 0
-        0.7 0.3 0 0 0
-        0 0.3 0.7 0 0
-        0 0 0 1 0"/>
+      <feColorMatrix type="matrix" values="0.625 0.375 0 0 0 0.7 0.3 0 0 0 0 0.3 0.7 0 0 0 0 0 1 0"/>
     </filter>
     <filter id="tritanopia-filter">
-      <feColorMatrix type="matrix" values="
-        0.95 0.05 0 0 0
-        0 0.433 0.567 0 0
-        0 0.475 0.525 0 0
-        0 0 0 1 0"/>
+      <feColorMatrix type="matrix" values="0.95 0.05 0 0 0 0 0.433 0.567 0 0 0 0.475 0.525 0 0 0 0 0 1 0"/>
     </filter>
   </defs>
 </svg>
@@ -538,94 +548,105 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 
 <div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Accessibility Menu">
   <div class="a11y-header">
-    <h2>♿ Accessibility</h2>
+    <h2>♿ <span data-i18n="a11y_title">Accessibility</span></h2>
     <button class="a11y-close" onclick="toggleA11y()" aria-label="Close">✕</button>
   </div>
 
-  <div class="a11y-section-title">টেক্সট</div>
+  <div class="a11y-section-title" data-i18n="sec_language">LANGUAGE</div>
+
+  <div class="a11y-item" data-a11y="language">
+    <span class="icon">🌐</span>
+    <span class="label" data-i18n="language">Language</span>
+    <span class="a11y-lang-pills">
+      <button id="langBn" onclick="event.stopPropagation();setLanguage('bn')">বাংলা</button>
+      <button id="langEn" onclick="event.stopPropagation();setLanguage('en')">English</button>
+    </span>
+  </div>
+
+  <div class="a11y-section-title" data-i18n="sec_text">TEXT</div>
 
   <div class="a11y-item" data-a11y="text-up" onclick="a11yAction('text-up')">
     <span class="icon">🔍</span>
-    <span class="label" id="txtUpLabel">Increase Text</span>
+    <span class="label" id="txtUpLabel" data-i18n="increase_text">Increase Text</span>
   </div>
 
   <div class="a11y-item" data-a11y="text-down" onclick="a11yAction('text-down')">
     <span class="icon">🔍</span>
-    <span class="label" id="txtDownLabel">Decrease Text</span>
+    <span class="label" id="txtDownLabel" data-i18n="decrease_text">Decrease Text</span>
   </div>
 
-  <div class="a11y-item" data-a11y="line-spacing" onclick="a11yAction('line-spacing')">
+  <div class="a11y-item" data-a11y="line-spacing">
     <span class="icon">📏</span>
-    <span class="label">Line Spacing <span id="lineSpacingVal" style="opacity:.75;font-size:13px">(1.5)</span></span>
+    <span class="label"><span data-i18n="line_spacing">Line Spacing</span> <span id="lineSpacingVal" style="opacity:.75;font-size:13px">(1.5)</span></span>
     <span class="stepper">
       <button onclick="event.stopPropagation();lineSpacing(-0.1)" aria-label="Decrease">−</button>
       <button onclick="event.stopPropagation();lineSpacing(0.1)" aria-label="Increase">+</button>
     </span>
   </div>
 
-  <div class="a11y-section-title">ভিজ্যুয়াল</div>
+  <div class="a11y-section-title" data-i18n="sec_visual">VISUAL</div>
 
   <div class="a11y-item" data-a11y="grayscale" onclick="a11yAction('grayscale')">
     <span class="icon">▥</span>
-    <span class="label">Grayscale</span>
+    <span class="label" data-i18n="grayscale">Grayscale</span>
     <span class="switch"></span>
   </div>
 
   <div class="a11y-item" data-a11y="contrast" onclick="a11yAction('contrast')">
     <span class="icon">◐</span>
-    <span class="label">High Contrast</span>
+    <span class="label" data-i18n="contrast">High Contrast</span>
     <span class="switch"></span>
   </div>
 
   <div class="a11y-item" data-a11y="negative" onclick="a11yAction('negative')">
     <span class="icon">👁</span>
-    <span class="label">Negative Contrast</span>
+    <span class="label" data-i18n="negative">Negative Contrast</span>
     <span class="switch"></span>
   </div>
 
   <div class="a11y-item" data-a11y="light-bg" onclick="a11yAction('light-bg')">
     <span class="icon">💡</span>
-    <span class="label">Light Background</span>
+    <span class="label" data-i18n="light_bg">Light Background</span>
     <span class="switch"></span>
   </div>
 
-  <div class="a11y-section-title">কালার ব্লাইন্ড</div>
+  <div class="a11y-section-title" data-i18n="sec_colorblind">COLOR BLIND</div>
 
   <div class="a11y-item" data-a11y="protanopia" onclick="a11yAction('protanopia')">
     <span class="icon">🎨</span>
-    <span class="label">Protanopia (লাল-সবুজ)</span>
+    <span class="label" data-i18n="protanopia">Protanopia (Red-Green)</span>
     <span class="switch"></span>
   </div>
 
   <div class="a11y-item" data-a11y="deuteranopia" onclick="a11yAction('deuteranopia')">
     <span class="icon">🎨</span>
-    <span class="label">Deuteranopia (সবুজ-লাল)</span>
+    <span class="label" data-i18n="deuteranopia">Deuteranopia (Green-Red)</span>
     <span class="switch"></span>
   </div>
 
   <div class="a11y-item" data-a11y="tritanopia" onclick="a11yAction('tritanopia')">
     <span class="icon">🎨</span>
-    <span class="label">Tritanopia (নীল-হলুদ)</span>
+    <span class="label" data-i18n="tritanopia">Tritanopia (Blue-Yellow)</span>
     <span class="switch"></span>
   </div>
 
-  <div class="a11y-section-title">রিডিং</div>
+  <div class="a11y-section-title" data-i18n="sec_reading">READING</div>
 
   <div class="a11y-item" data-a11y="underline" onclick="a11yAction('underline')">
     <span class="icon">🔗</span>
-    <span class="label">Links Underline</span>
+    <span class="label" data-i18n="underline">Links Underline</span>
     <span class="switch"></span>
   </div>
 
   <div class="a11y-item" data-a11y="readable" onclick="a11yAction('readable')">
     <span class="icon">A</span>
-    <span class="label">Readable Font</span>
+    <span class="label" data-i18n="readable">Readable Font</span>
     <span class="switch"></span>
   </div>
 
   <div class="a11y-item" data-a11y="read-aloud" onclick="a11yAction('read-aloud')">
     <span class="icon">🔊</span>
-    <span class="label">Read Aloud (Bengali)</span>
+    <span class="label" data-i18n="read_aloud">Read Aloud</span>
     <span class="switch"></span>
   </div>
 
@@ -633,7 +654,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 
   <div class="a11y-item reset" onclick="a11yAction('reset')">
     <span class="icon">↺</span>
-    <span class="label">Reset All</span>
+    <span class="label" data-i18n="reset_all">Reset All</span>
   </div>
 </div>
 
@@ -647,10 +668,10 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
   <div class="login-card">
     <img class="login-logo" src="https://i.imgur.com/kthmVIB.png" onerror="this.src='https://via.placeholder.com/110'">
     <div class="login-title">Momtaj Uddin Business Management College</div>
-    <div class="login-sub">☁️ ক্লাউড সিঙ্ক সংস্করণ</div>
-    <label>শ্রেণি নির্বাচন করুন</label>
+    <div class="login-sub" data-i18n="login_sub">☁️ Cloud Sync Version</div>
+    <label data-i18n="select_class">Select Class</label>
     <select id="loginClass">
-      <option value="">-- শ্রেণি --</option>
+      <option value="" data-i18n="choose_class">-- Class --</option>
       <option>৬ষ্ঠ শ্রেণি</option>
       <option>৭ম শ্রেণি</option>
       <option>৮ম শ্রেণি</option>
@@ -659,14 +680,14 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
       <option>১১শ শ্রেণি</option>
       <option>১২শ শ্রেণি</option>
     </select>
-    <label>পাসওয়ার্ড</label>
-    <input type="password" id="loginPass" placeholder="ডিফল্ট: admin123">
+    <label data-i18n="password">Password</label>
+    <input type="password" id="loginPass" data-i18n-placeholder="pass_placeholder" placeholder="Default: admin123">
     <div style="margin-top:20px">
-      <button class="btn btn-primary" onclick="doLogin()">🔐 লগইন করুন</button>
+      <button class="btn btn-primary" onclick="doLogin()" data-i18n="login_btn">🔐 Login</button>
     </div>
     <div class="sync-status">
       <span class="sync-dot" id="syncDot"></span>
-      <span id="syncText">Firebase সংযোগ পরীক্ষা হচ্ছে...</span>
+      <span id="syncText" data-i18n="connecting">Checking Firebase connection...</span>
     </div>
   </div>
 </div>
@@ -677,7 +698,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
     <img class="logo" src="https://i.imgur.com/kthmVIB.png" onerror="this.src='https://via.placeholder.com/46'">
     <div class="topbar-info">
       <h1>Momtaj Uddin Business Management College</h1>
-      <p>শ্রেণি: <b id="topClass"></b></p>
+      <p><span data-i18n="class_label">Class</span>: <b id="topClass"></b></p>
     </div>
     <div class="topbar-actions">
       <button class="icon-btn" onclick="toggleTheme()">🌙</button>
@@ -686,20 +707,20 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 ড্যাশবোর্ড</button>
-    <button class="tab" data-tab="students" onclick="switchTab('students')">👥 শিক্ষার্থী</button>
-    <button class="tab" data-tab="monthly" onclick="switchTab('monthly')">🗓️ হাজিরা</button>
-    <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏅 লিডারবোর্ড</button>
-    <button class="tab" data-tab="heatmap" onclick="switchTab('heatmap')">🔥 হিটম্যাপ</button>
-    <button class="tab" data-tab="results" onclick="switchTab('results')">🏆 ফলাফল</button>
-    <button class="tab" data-tab="notice" onclick="switchTab('notice')">📢 নোটিশ</button>
-    <button class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ সেটিংস</button>
+    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')" data-i18n="tab_dashboard">📊 Dashboard</button>
+    <button class="tab" data-tab="students" onclick="switchTab('students')" data-i18n="tab_students">👥 Students</button>
+    <button class="tab" data-tab="monthly" onclick="switchTab('monthly')" data-i18n="tab_monthly">🗓️ Attendance</button>
+    <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')" data-i18n="tab_leaderboard">🏅 Leaderboard</button>
+    <button class="tab" data-tab="heatmap" onclick="switchTab('heatmap')" data-i18n="tab_heatmap">🔥 Heatmap</button>
+    <button class="tab" data-tab="results" onclick="switchTab('results')" data-i18n="tab_results">🏆 Results</button>
+    <button class="tab" data-tab="notice" onclick="switchTab('notice')" data-i18n="tab_notice">📢 Notice</button>
+    <button class="tab" data-tab="settings" onclick="switchTab('settings')" data-i18n="tab_settings">⚙️ Settings</button>
   </div>
 
   <main>
     <section class="view active" id="view-dashboard">
       <div class="hero-banner">
-        <h2><span class="hero-wave">👋</span> স্বাগতম!</h2>
+        <h2><span class="hero-wave">👋</span> <span data-i18n="welcome">Welcome!</span></h2>
         <p>Momtaj Uddin Business Management College</p>
         <div class="hero-info">
           <span class="hero-chip">📚 <b id="heroClass">-</b></span>
@@ -711,21 +732,21 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 
       <div class="stats">
         <div class="stat">
-          <div class="label">মোট শিক্ষার্থী</div>
+          <div class="label" data-i18n="total_students">Total Students</div>
           <div class="value" id="stTotal">0</div>
         </div>
         <div class="stat green">
-          <div class="label">আজ উপস্থিত</div>
+          <div class="label" data-i18n="present_today">Present Today</div>
           <div class="value" id="stPresent">0</div>
         </div>
         <div class="stat red">
-          <div class="label">আজ অনুপস্থিত</div>
+          <div class="label" data-i18n="absent_today">Absent Today</div>
           <div class="value" id="stAbsent">0</div>
         </div>
         <div class="stat blue" style="display:flex;align-items:center;gap:12px">
           <div style="flex:1">
-            <div class="label">উপস্থিতির হার</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">আজকের</div>
+            <div class="label" data-i18n="att_rate">Attendance Rate</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px" data-i18n="today">Today</div>
           </div>
           <div class="rate-ring">
             <svg width="60" height="60" viewBox="0 0 100 100">
@@ -737,20 +758,20 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
         </div>
       </div>
 
-      <div class="card"><h2>📈 সাপ্তাহিক ট্রেন্ড</h2><div class="chart-box"><canvas id="trendChart"></canvas></div></div>
+      <div class="card"><h2 data-i18n="weekly_trend">📈 Weekly Trend</h2><div class="chart-box"><canvas id="trendChart"></canvas></div></div>
     </section>
 
     <section class="view" id="view-students">
       <div class="card">
-        <h2>👥 শিক্ষার্থী</h2>
+        <h2 data-i18n="students_title">👥 Students</h2>
         <div class="toolbar">
-          <div class="search"><input id="searchBox" placeholder="খুঁজুন..." oninput="renderStudents()"></div>
-          <button class="btn btn-accent btn-sm" onclick="openAddStudent()">➕ নতুন</button>
+          <div class="search"><input id="searchBox" oninput="renderStudents()" data-i18n-placeholder="search_ph" placeholder="Search..."></div>
+          <button class="btn btn-accent btn-sm" onclick="openAddStudent()" data-i18n="add_new">➕ New</button>
         </div>
         <div class="chips" id="filterChips">
-          <button class="chip active" data-filter="all" onclick="setFilter('all')">সবাই <span class="count" id="cAll">0</span></button>
-          <button class="chip" data-filter="present" onclick="setFilter('present')">উপস্থিত <span class="count" id="cPresent">0</span></button>
-          <button class="chip" data-filter="absent" onclick="setFilter('absent')">অনুপস্থিত <span class="count" id="cAbsent">0</span></button>
+          <button class="chip active" data-filter="all" onclick="setFilter('all')"><span data-i18n="all">All</span> <span class="count" id="cAll">0</span></button>
+          <button class="chip" data-filter="present" onclick="setFilter('present')"><span data-i18n="present">Present</span> <span class="count" id="cPresent">0</span></button>
+          <button class="chip" data-filter="absent" onclick="setFilter('absent')"><span data-i18n="absent">Absent</span> <span class="count" id="cAbsent">0</span></button>
         </div>
         <div id="studentList"></div>
       </div>
@@ -758,20 +779,20 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 
     <section class="view" id="view-monthly">
       <div class="card">
-        <h2>🗓️ হাজিরা — <span id="monthTitle"></span></h2>
+        <h2><span data-i18n="attendance_title">🗓️ Attendance</span> — <span id="monthTitle"></span></h2>
         <div class="toolbar">
           <select id="monthSelect" onchange="renderMonthly()" style="flex:1;min-width:180px"></select>
-          <button class="btn btn-success btn-sm" onclick="markToday('present')">✅ আজ সবাই উপস্থিত</button>
-          <button class="btn btn-danger btn-sm" onclick="markToday('absent')">❌ আজ সবাই অনুপস্থিত</button>
-          <button class="btn btn-info btn-sm" onclick="exportMonthly()">📥 Excel</button>
-          <button class="btn btn-wa btn-sm" onclick="shareMonthlyWhatsApp()">💬 রিপোর্ট পাঠান</button>
+          <button class="btn btn-success btn-sm" onclick="markToday('present')" data-i18n="all_present_today">✅ All Present</button>
+          <button class="btn btn-danger btn-sm" onclick="markToday('absent')" data-i18n="all_absent_today">❌ All Absent</button>
+          <button class="btn btn-info btn-sm" onclick="exportMonthly()" data-i18n="excel">📥 Excel</button>
+          <button class="btn btn-wa btn-sm" onclick="shareMonthlyWhatsApp()" data-i18n="send_report">💬 Send Report</button>
           <button class="btn btn-ghost btn-sm" onclick="undoLast()" id="undoBtn" title="Ctrl+Z" disabled>↶ Undo</button>
         </div>
         <div class="legend">
-          <span><b style="color:var(--success)">✓</b> উপস্থিত</span>
-          <span><b style="color:var(--danger)">✗</b> অনুপস্থিত</span>
-          <span><b style="color:var(--muted)">-</b> চিহ্নিত হয়নি</span>
-          <span>💡 সেলে ক্লিক → ✓⇄✗ (Ctrl+Z = Undo)</span>
+          <span><b style="color:var(--success)">✓</b> <span data-i18n="present">Present</span></span>
+          <span><b style="color:var(--danger)">✗</b> <span data-i18n="absent">Absent</span></span>
+          <span><b style="color:var(--muted)">-</b> <span data-i18n="unmarked">Unmarked</span></span>
+          <span data-i18n="click_hint">💡 Click cell to toggle (Ctrl+Z = Undo)</span>
         </div>
         <div class="table-wrap" id="monthlyTable" style="margin-top:10px"></div>
       </div>
@@ -779,16 +800,16 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 
     <section class="view" id="view-leaderboard">
       <div class="card">
-        <h2>🏅 সেরা শিক্ষার্থী — <span id="leaderMonth"></span></h2>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">এই মাসের হাজিরা শতাংশের ভিত্তিতে।</p>
+        <h2 data-i18n="top_students">🏅 Top Students — <span id="leaderMonth"></span></h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px" data-i18n="leaderboard_desc">Based on this month's attendance percentage.</p>
         <div class="leader-grid">
           <div class="leader-col">
-            <h3>🥇 সর্বোচ্চ উপস্থিতি</h3>
-            <div id="topList"><div class="empty" style="padding:20px"><p>ডেটা নেই</p></div></div>
+            <h3 data-i18n="best_attendance">🥇 Best Attendance</h3>
+            <div id="topList"><div class="empty" style="padding:20px"><p data-i18n="no_data">No data</p></div></div>
           </div>
           <div class="leader-col">
-            <h3>⚠️ সর্বনিম্ন উপস্থিতি</h3>
-            <div id="bottomList"><div class="empty" style="padding:20px"><p>ডেটা নেই</p></div></div>
+            <h3 data-i18n="worst_attendance">⚠️ Lowest Attendance</h3>
+            <div id="bottomList"><div class="empty" style="padding:20px"><p data-i18n="no_data">No data</p></div></div>
           </div>
         </div>
       </div>
@@ -796,69 +817,69 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 
     <section class="view" id="view-heatmap">
       <div class="card">
-        <h2>🔥 উপস্থিতির হিটম্যাপ — <span id="heatMonth"></span></h2>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">প্রতিটি স্কোয়ার = একদিন। রঙ গাঢ় মানে বেশি শিক্ষার্থী উপস্থিত।</p>
+        <h2 data-i18n="heatmap_title">🔥 Attendance Heatmap — <span id="heatMonth"></span></h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px" data-i18n="heatmap_desc">Each square = one day. Darker color = more students present.</p>
         <div class="heatmap" id="heatmapGrid"></div>
         <div class="heat-legend">
-          <span>কম</span>
+          <span data-i18n="less">Less</span>
           <span style="background:#bbf7d0"></span>
           <span style="background:#86efac"></span>
           <span style="background:#4ade80"></span>
           <span style="background:#22c55e"></span>
           <span style="background:#16a34a"></span>
-          <span>বেশি</span>
+          <span data-i18n="more">More</span>
         </div>
       </div>
     </section>
 
     <section class="view" id="view-results">
       <div class="card">
-        <h2>🏆 ফলাফল</h2>
+        <h2 data-i18n="results_title">🏆 Results</h2>
         <div class="table-wrap" id="resultTable"></div>
       </div>
     </section>
 
     <section class="view" id="view-notice">
       <div class="card">
-        <h2>📢 নোটিশ</h2>
-        <textarea id="noticeInput" rows="3" placeholder="নোটিশ লিখুন..."></textarea>
+        <h2 data-i18n="notice_title">📢 Notice</h2>
+        <textarea id="noticeInput" rows="3" data-i18n-placeholder="notice_ph" placeholder="Write a notice..."></textarea>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-          <button class="btn btn-accent" onclick="addNotice()" style="flex:1">📌 যোগ করুন</button>
-          <button class="btn btn-wa" onclick="sendNoticeWhatsApp()" style="flex:1">💬 WhatsApp এ পাঠান</button>
+          <button class="btn btn-accent" onclick="addNotice()" style="flex:1" data-i18n="add_notice">📌 Add</button>
+          <button class="btn btn-wa" onclick="sendNoticeWhatsApp()" style="flex:1" data-i18n="send_wa">💬 Send on WhatsApp</button>
         </div>
       </div>
-      <div class="card"><h2>📋 নোটিশ বোর্ড</h2><div id="noticeList"></div></div>
+      <div class="card"><h2 data-i18n="notice_board">📋 Notice Board</h2><div id="noticeList"></div></div>
     </section>
 
     <section class="view" id="view-settings">
       <div class="card">
-        <h2>💬 WhatsApp গ্রুপ — <span id="waClassLabel"></span></h2>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">এই শ্রেণির WhatsApp গ্রুপের ইনভাইট লিংক দিন।</p>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px">Group Invite Link</label>
+        <h2><span data-i18n="wa_group">💬 WhatsApp Group</span> — <span id="waClassLabel"></span></h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px" data-i18n="wa_desc">Enter this class's WhatsApp group invite link.</p>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px" data-i18n="group_link">Group Invite Link</label>
         <input id="waGroupLink" placeholder="https://chat.whatsapp.com/XXXXXXXXXX">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 6px">গ্রুপের নাম (ঐচ্ছিক)</label>
-        <input id="waGroupName" placeholder="যেমন: ৬ষ্ঠ শ্রেণি অভিভাবক গ্রুপ">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 6px" data-i18n="group_name">Group Name (optional)</label>
+        <input id="waGroupName" data-i18n-placeholder="group_name_ph" placeholder="e.g., Class 6 Parents Group">
         <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="saveWhatsAppSettings()" style="flex:1">💾 সেভ করুন</button>
-          <button class="btn btn-wa" onclick="testWhatsAppLink()" style="flex:1">🔗 টেস্ট করুন</button>
-          <button class="btn btn-ghost" onclick="clearWhatsAppSettings()" style="flex:1">🗑️ মুছুন</button>
+          <button class="btn btn-primary" onclick="saveWhatsAppSettings()" style="flex:1" data-i18n="save">💾 Save</button>
+          <button class="btn btn-wa" onclick="testWhatsAppLink()" style="flex:1" data-i18n="test">🔗 Test</button>
+          <button class="btn btn-ghost" onclick="clearWhatsAppSettings()" style="flex:1" data-i18n="remove">🗑️ Remove</button>
         </div>
       </div>
 
       <div class="card">
-        <h2>🔐 পাসওয়ার্ড</h2>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">ডিফল্ট পাসওয়ার্ড: <b>admin123</b></p>
-        <input type="password" id="newPass" placeholder="নতুন পাসওয়ার্ড" autocomplete="new-password">
-        <button class="btn btn-danger" style="margin-top:12px" onclick="changePassword()">🔑 পরিবর্তন করুন</button>
+        <h2 data-i18n="password_title">🔐 Password</h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px"><span data-i18n="default_pass">Default password</span>: <b>admin123</b></p>
+        <input type="password" id="newPass" data-i18n-placeholder="new_pass_ph" placeholder="New password" autocomplete="new-password">
+        <button class="btn btn-danger" style="margin-top:12px" onclick="changePassword()" data-i18n="change_pass">🔑 Change</button>
       </div>
 
       <div class="card">
-        <h2>ℹ️ অ্যাপ সম্পর্কে</h2>
+        <h2 data-i18n="about">ℹ️ About</h2>
         <p style="font-size:13px;color:var(--muted);line-height:1.7">
           <b>Momtaj Uddin Business Management College</b><br>
-          আধুনিক ক্লাউড হাজিরা ব্যবস্থাপনা অ্যাপ।<br>
-          ভার্সন: 6.0 — সম্পূর্ণ অ্যাক্সেসিবিলিটি স্যুট।<br>
-          Ctrl+Z = Undo
+          <span data-i18n="about_line1">Modern cloud attendance management app.</span><br>
+          <span data-i18n="about_line2">Version: 7.0 — Full accessibility suite + language toggle.</span><br>
+          <span data-i18n="about_line3">Ctrl+Z = Undo</span>
         </p>
       </div>
     </section>
@@ -866,10 +887,259 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 </div>
 
 <div id="modalRoot"></div>
-<div class="live-badge hidden" id="liveBadge"><span class="dot"></span> Live Sync</div>
+<div class="live-badge hidden" id="liveBadge"><span class="dot"></span> <span data-i18n="live_sync">Live Sync</span></div>
 <div class="confetti-container" id="confettiBox"></div>
 
 <script>
+/* ============================================================
+   i18n — TRANSLATIONS
+   ============================================================ */
+const TRANSLATIONS = {
+  bn: {
+    a11y_title: 'অ্যাক্সেসিবিলিটি',
+    sec_language: 'ভাষা',
+    sec_text: 'টেক্সট',
+    sec_visual: 'ভিজ্যুয়াল',
+    sec_colorblind: 'কালার ব্লাইন্ড',
+    sec_reading: 'রিডিং',
+    language: 'ভাষা',
+    increase_text: 'টেক্সট বড় করুন',
+    decrease_text: 'টেক্সট ছোট করুন',
+    line_spacing: 'লাইন স্পেসিং',
+    grayscale: 'গ্রেস্কেল',
+    contrast: 'হাই কনট্রাস্ট',
+    negative: 'নেগেটিভ কনট্রাস্ট',
+    light_bg: 'লাইট ব্যাকগ্রাউন্ড',
+    protanopia: 'প্রোটানোপিয়া (লাল-সবুজ)',
+    deuteranopia: 'ডিউটেরানোপিয়া (সবুজ-লাল)',
+    tritanopia: 'ট্রাইটানোপিয়া (নীল-হলুদ)',
+    underline: 'লিংক আন্ডারলাইন',
+    readable: 'পড়ার উপযোগী ফন্ট',
+    read_aloud: 'পড়ে শোনান',
+    reset_all: 'সব রিসেট করুন',
+    login_sub: '☁️ ক্লাউড সিঙ্ক সংস্করণ',
+    select_class: 'শ্রেণি নির্বাচন করুন',
+    choose_class: '-- শ্রেণি --',
+    password: 'পাসওয়ার্ড',
+    pass_placeholder: 'ডিফল্ট: admin123',
+    login_btn: '🔐 লগইন করুন',
+    connecting: 'Firebase সংযোগ পরীক্ষা হচ্ছে...',
+    connected: '☁️ ক্লাউড সংযুক্ত',
+    connect_fail: '❌ Firebase সংযোগ ব্যর্থ',
+    class_label: 'শ্রেণি',
+    tab_dashboard: '📊 ড্যাশবোর্ড',
+    tab_students: '👥 শিক্ষার্থী',
+    tab_monthly: '🗓️ হাজিরা',
+    tab_leaderboard: '🏅 লিডারবোর্ড',
+    tab_heatmap: '🔥 হিটম্যাপ',
+    tab_results: '🏆 ফলাফল',
+    tab_notice: '📢 নোটিশ',
+    tab_settings: '⚙️ সেটিংস',
+    welcome: 'স্বাগতম!',
+    total_students: 'মোট শিক্ষার্থী',
+    present_today: 'আজ উপস্থিত',
+    absent_today: 'আজ অনুপস্থিত',
+    att_rate: 'উপস্থিতির হার',
+    today: 'আজকের',
+    weekly_trend: '📈 সাপ্তাহিক ট্রেন্ড',
+    students_title: '👥 শিক্ষার্থী',
+    search_ph: 'খুঁজুন...',
+    add_new: '➕ নতুন',
+    all: 'সবাই',
+    present: 'উপস্থিত',
+    absent: 'অনুপস্থিত',
+    attendance_title: '🗓️ হাজিরা',
+    all_present_today: '✅ আজ সবাই উপস্থিত',
+    all_absent_today: '❌ আজ সবাই অনুপস্থিত',
+    excel: '📥 Excel',
+    send_report: '💬 রিপোর্ট পাঠান',
+    unmarked: 'চিহ্নিত হয়নি',
+    click_hint: '💡 সেলে ক্লিক → ✓⇄✗ (Ctrl+Z = Undo)',
+    top_students: '🏅 সেরা শিক্ষার্থী',
+    leaderboard_desc: 'এই মাসের হাজিরা শতাংশের ভিত্তিতে।',
+    best_attendance: '🥇 সর্বোচ্চ উপস্থিতি',
+    worst_attendance: '⚠️ সর্বনিম্ন উপস্থিতি',
+    no_data: 'ডেটা নেই',
+    heatmap_title: '🔥 উপস্থিতির হিটম্যাপ',
+    heatmap_desc: 'প্রতিটি স্কোয়ার = একদিন। রঙ গাঢ় মানে বেশি শিক্ষার্থী উপস্থিত।',
+    less: 'কম',
+    more: 'বেশি',
+    results_title: '🏆 ফলাফল',
+    notice_title: '📢 নোটিশ',
+    notice_ph: 'নোটিশ লিখুন...',
+    add_notice: '📌 যোগ করুন',
+    send_wa: '💬 WhatsApp এ পাঠান',
+    notice_board: '📋 নোটিশ বোর্ড',
+    wa_group: '💬 WhatsApp গ্রুপ',
+    wa_desc: 'এই শ্রেণির WhatsApp গ্রুপের ইনভাইট লিংক দিন।',
+    group_link: 'গ্রুপ ইনভাইট লিংক',
+    group_name: 'গ্রুপের নাম (ঐচ্ছিক)',
+    group_name_ph: 'যেমন: ৬ষ্ঠ শ্রেণি অভিভাবক গ্রুপ',
+    save: '💾 সেভ করুন',
+    test: '🔗 টেস্ট করুন',
+    remove: '🗑️ মুছুন',
+    password_title: '🔐 পাসওয়ার্ড',
+    default_pass: 'ডিফল্ট পাসওয়ার্ড',
+    new_pass_ph: 'নতুন পাসওয়ার্ড',
+    change_pass: '🔑 পরিবর্তন করুন',
+    about: 'ℹ️ অ্যাপ সম্পর্কে',
+    about_line1: 'আধুনিক ক্লাউড হাজিরা ব্যবস্থাপনা অ্যাপ।',
+    about_line2: 'ভার্সন: ৭.০ — সম্পূর্ণ অ্যাক্সেসিবিলিটি স্যুট + ভাষা টগল।',
+    about_line3: 'Ctrl+Z = Undo',
+    live_sync: 'লাইভ সিঙ্ক'
+  },
+  en: {
+    a11y_title: 'Accessibility',
+    sec_language: 'LANGUAGE',
+    sec_text: 'TEXT',
+    sec_visual: 'VISUAL',
+    sec_colorblind: 'COLOR BLIND',
+    sec_reading: 'READING',
+    language: 'Language',
+    increase_text: 'Increase Text',
+    decrease_text: 'Decrease Text',
+    line_spacing: 'Line Spacing',
+    grayscale: 'Grayscale',
+    contrast: 'High Contrast',
+    negative: 'Negative Contrast',
+    light_bg: 'Light Background',
+    protanopia: 'Protanopia (Red-Green)',
+    deuteranopia: 'Deuteranopia (Green-Red)',
+    tritanopia: 'Tritanopia (Blue-Yellow)',
+    underline: 'Links Underline',
+    readable: 'Readable Font',
+    read_aloud: 'Read Aloud',
+    reset_all: 'Reset All',
+    login_sub: '☁️ Cloud Sync Version',
+    select_class: 'Select Class',
+    choose_class: '-- Class --',
+    password: 'Password',
+    pass_placeholder: 'Default: admin123',
+    login_btn: '🔐 Login',
+    connecting: 'Checking Firebase connection...',
+    connected: '☁️ Cloud Connected',
+    connect_fail: '❌ Firebase connection failed',
+    class_label: 'Class',
+    tab_dashboard: '📊 Dashboard',
+    tab_students: '👥 Students',
+    tab_monthly: '🗓️ Attendance',
+    tab_leaderboard: '🏅 Leaderboard',
+    tab_heatmap: '🔥 Heatmap',
+    tab_results: '🏆 Results',
+    tab_notice: '📢 Notice',
+    tab_settings: '⚙️ Settings',
+    welcome: 'Welcome!',
+    total_students: 'Total Students',
+    present_today: 'Present Today',
+    absent_today: 'Absent Today',
+    att_rate: 'Attendance Rate',
+    today: 'Today',
+    weekly_trend: '📈 Weekly Trend',
+    students_title: '👥 Students',
+    search_ph: 'Search...',
+    add_new: '➕ New',
+    all: 'All',
+    present: 'Present',
+    absent: 'Absent',
+    attendance_title: '🗓️ Attendance',
+    all_present_today: '✅ All Present',
+    all_absent_today: '❌ All Absent',
+    excel: '📥 Excel',
+    send_report: '💬 Send Report',
+    unmarked: 'Unmarked',
+    click_hint: '💡 Click cell to toggle (Ctrl+Z = Undo)',
+    top_students: '🏅 Top Students',
+    leaderboard_desc: "Based on this month's attendance percentage.",
+    best_attendance: '🥇 Best Attendance',
+    worst_attendance: '⚠️ Lowest Attendance',
+    no_data: 'No data',
+    heatmap_title: '🔥 Attendance Heatmap',
+    heatmap_desc: 'Each square = one day. Darker color = more students present.',
+    less: 'Less',
+    more: 'More',
+    results_title: '🏆 Results',
+    notice_title: '📢 Notice',
+    notice_ph: 'Write a notice...',
+    add_notice: '📌 Add',
+    send_wa: '💬 Send on WhatsApp',
+    notice_board: '📋 Notice Board',
+    wa_group: '💬 WhatsApp Group',
+    wa_desc: "Enter this class's WhatsApp group invite link.",
+    group_link: 'Group Invite Link',
+    group_name: 'Group Name (optional)',
+    group_name_ph: 'e.g., Class 6 Parents Group',
+    save: '💾 Save',
+    test: '🔗 Test',
+    remove: '🗑️ Remove',
+    password_title: '🔐 Password',
+    default_pass: 'Default password',
+    new_pass_ph: 'New password',
+    change_pass: '🔑 Change',
+    about: 'ℹ️ About',
+    about_line1: 'Modern cloud attendance management app.',
+    about_line2: 'Version: 7.0 — Full accessibility suite + language toggle.',
+    about_line3: 'Ctrl+Z = Undo',
+    live_sync: 'Live Sync'
+  }
+};
+
+function t(key){
+  const lang = getCurrentLang();
+  return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key;
+}
+
+function getCurrentLang(){
+  return localStorage.getItem('app_lang') || 'bn';
+}
+
+function setLanguage(lang){
+  if (lang !== 'bn' && lang !== 'en') return;
+  localStorage.setItem('app_lang', lang);
+  document.documentElement.lang = lang;
+  applyTranslations();
+  updateLangPills();
+  toast(lang === 'bn' ? '🌐 ভাষা: বাংলা' : '🌐 Language: English', 'success');
+}
+
+function applyTranslations(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.dataset.i18n;
+    const trans = t(key);
+    // Handle elements with children (preserve inner spans like counters)
+    if (el.children.length === 0){
+      el.textContent = trans;
+    } else {
+      // Only update the direct text node
+      let updated = false;
+      el.childNodes.forEach(node=>{
+        if (node.nodeType === 3 && !updated){
+          const trimmed = node.textContent.trim();
+          if (trimmed) {
+            // find emoji prefix
+            const emojiMatch = trimmed.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})+/u);
+            const prefix = emojiMatch ? emojiMatch[0] + ' ' : '';
+            node.textContent = prefix + trans.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}️\s]+/u, '');
+            updated = true;
+          }
+        }
+      });
+      if (!updated) el.textContent = trans;
+    }
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  updateTextLabels();
+}
+
+function updateLangPills(){
+  const lang = getCurrentLang();
+  const bnBtn = document.getElementById('langBn');
+  const enBtn = document.getElementById('langEn');
+  if (bnBtn) bnBtn.classList.toggle('active', lang === 'bn');
+  if (enBtn) enBtn.classList.toggle('active', lang === 'en');
+}
+
 /* ============================================================
    ACCESSIBILITY SYSTEM
    ============================================================ */
@@ -899,7 +1169,7 @@ function a11yAction(action){
     updateTextLabels();
     document.getElementById('lineSpacingVal').textContent = '(1.5)';
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    toast('♿ সব রিসেট হয়েছে','info');
+    toast(getCurrentLang() === 'bn' ? '♿ সব রিসেট হয়েছে' : '♿ All reset', 'info');
     return;
   }
 
@@ -911,7 +1181,7 @@ function a11yAction(action){
     prefs.scale = next;
     setA11yPrefs(prefs);
     updateTextLabels();
-    toast(`🔍 টেক্সট: ${Math.round(next*100)}%`,'info');
+    toast(`🔍 ${Math.round(next*100)}%`,'info');
     return;
   }
 
@@ -924,12 +1194,7 @@ function a11yAction(action){
     prefs.scale = next;
     setA11yPrefs(prefs);
     updateTextLabels();
-    toast(`🔍 টেক্সট: ${Math.round(next*100)}%`,'info');
-    return;
-  }
-
-  if (action === 'line-spacing'){
-    // handled by the +/- buttons
+    toast(`🔍 ${Math.round(next*100)}%`,'info');
     return;
   }
 
@@ -940,11 +1205,10 @@ function a11yAction(action){
     updateA11ySwitches();
     if (isOn) startReadAloud();
     else if (window.speechSynthesis) window.speechSynthesis.cancel();
-    toast(isOn ? '🔊 রিড অ্যালাউড চালু — ক্লিক করুন' : '🔇 বন্ধ', 'info');
+    toast(isOn ? '🔊 Read Aloud ON' : '🔇 Read Aloud OFF', 'info');
     return;
   }
 
-  // Color blind filters — only one at a time
   if (['protanopia','deuteranopia','tritanopia'].includes(action)){
     ['protanopia','deuteranopia','tritanopia'].forEach(k=>{
       document.body.classList.remove('a11y-'+k);
@@ -957,18 +1221,17 @@ function a11yAction(action){
     }
     setA11yPrefs(prefs);
     updateA11ySwitches();
-    toast(isOn ? `🎨 ${action} চালু` : '🎨 বন্ধ', 'info');
+    toast(isOn ? `🎨 ${action} ON` : '🎨 OFF', 'info');
     return;
   }
 
-  // Simple toggles
   const toggleMap = ['grayscale','contrast','negative','light-bg','underline','readable'];
   if (toggleMap.includes(action)){
     const isOn = document.body.classList.toggle('a11y-'+action);
     prefs[action] = isOn;
     setA11yPrefs(prefs);
     updateA11ySwitches();
-    toast(isOn ? `♿ ${action} চালু` : `♿ ${action} বন্ধ`, 'info');
+    toast(isOn ? `♿ ON` : `♿ OFF`, 'info');
   }
 }
 
@@ -980,7 +1243,6 @@ function lineSpacing(delta){
   prefs.line = next;
   setA11yPrefs(prefs);
   document.getElementById('lineSpacingVal').textContent = `(${next})`;
-  updateA11ySwitches();
 }
 
 function updateTextLabels(){
@@ -988,8 +1250,8 @@ function updateTextLabels(){
   const pct = Math.round((prefs.scale || 1) * 100);
   const upLbl = document.getElementById('txtUpLabel');
   const downLbl = document.getElementById('txtDownLabel');
-  if (upLbl) upLbl.textContent = `Increase Text (${pct}%)`;
-  if (downLbl) downLbl.textContent = `Decrease Text (${pct}%)`;
+  if (upLbl) upLbl.textContent = `${t('increase_text')} (${pct}%)`;
+  if (downLbl) downLbl.textContent = `${t('decrease_text')} (${pct}%)`;
 }
 
 function updateA11ySwitches(){
@@ -1002,7 +1264,6 @@ function updateA11ySwitches(){
   if (lineVal) lineVal.textContent = `(${prefs.line || 1.5})`;
 }
 
-/* ===== Read Aloud ===== */
 let readAloudHandler = null;
 function startReadAloud(){
   if (readAloudHandler) document.removeEventListener('click', readAloudHandler, true);
@@ -1017,19 +1278,20 @@ function startReadAloud(){
     speakText(text);
   };
   document.addEventListener('click', readAloudHandler, true);
-  speakText('রিড অ্যালাউড চালু হয়েছে। যেকোনো লেখা বা বাটনে ক্লিক করুন, পড়ে শোনানো হবে।');
+  speakText(getCurrentLang() === 'bn'
+    ? 'রিড অ্যালাউড চালু হয়েছে। যেকোনো লেখা বা বাটনে ক্লিক করুন, পড়ে শোনানো হবে।'
+    : 'Read aloud is enabled. Click any text or button to hear it spoken.');
 }
 function speakText(text){
-  if (!window.speechSynthesis) return toast('এই ব্রাউজারে সাপোর্ট নেই','error');
+  if (!window.speechSynthesis) return toast('Not supported in this browser','error');
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  // Try to use Bengali voice if available
   const voices = window.speechSynthesis.getVoices();
-  const bnVoice = voices.find(v => v.lang && v.lang.startsWith('bn'));
-  if (bnVoice) u.voice = bnVoice;
-  u.lang = 'bn-BD';
+  const targetLang = getCurrentLang() === 'bn' ? 'bn' : 'en';
+  const voice = voices.find(v => v.lang && v.lang.startsWith(targetLang));
+  if (voice) u.voice = voice;
+  u.lang = targetLang === 'bn' ? 'bn-BD' : 'en-US';
   u.rate = 0.95;
-  u.pitch = 1;
   window.speechSynthesis.speak(u);
 }
 
@@ -1048,7 +1310,6 @@ function applyA11yPrefs(){
   updateA11ySwitches();
   updateTextLabels();
 }
-applyA11yPrefs();
 
 /* Preload voices */
 if (window.speechSynthesis){
@@ -1095,7 +1356,7 @@ function updateUndoButton(){
 }
 
 async function undoLast(){
-  if (!history.length) return toast('ফেরানোর কিছু নেই','info');
+  if (!history.length) return toast(getCurrentLang()==='bn'?'ফেরানোর কিছু নেই':'Nothing to undo','info');
   const last = history.pop();
   try {
     if (last.type === 'cell'){
@@ -1121,8 +1382,8 @@ async function undoLast(){
     if (active === 'view-leaderboard') renderLeaderboard();
     if (active === 'view-heatmap') renderHeatmap();
     updateUndoButton();
-    toast('↶ ফিরিয়ে আনা হয়েছে','success');
-  } catch(err){ console.error(err); toast('❌ ফেরানো যায়নি','error'); }
+    toast(getCurrentLang()==='bn'?'↶ ফিরিয়ে আনা হয়েছে':'↶ Undone','success');
+  } catch(err){ console.error(err); toast('Error','error'); }
 }
 
 document.addEventListener('keydown', (e)=>{
@@ -1144,10 +1405,10 @@ async function checkCloud(){
   try {
     await window.fbFns.setDoc(window.fbFns.doc(window.db,'system','ping'), {lastCheck: Date.now()});
     dot.className = 'sync-dot online';
-    text.textContent = '☁️ ক্লাউড সংযুক্ত';
+    text.textContent = t('connected');
   } catch(err){
     dot.className = 'sync-dot offline';
-    text.textContent = '❌ Firebase সংযোগ ব্যর্থ';
+    text.textContent = t('connect_fail');
     console.error(err);
   }
 }
@@ -1182,7 +1443,7 @@ async function saveToCloud(){
       students, attendance, results, notices, subNames, whatsapp,
       updatedAt: window.fbFns.serverTimestamp()
     }, { merge: true });
-  } catch(err){ console.error(err); toast('☁️ সেভ ব্যর্থ','error'); }
+  } catch(err){ console.error(err); toast('☁️ Save failed','error'); }
 }
 
 function saveAll(){
@@ -1217,7 +1478,10 @@ function startLiveSync(){
    HELPERS
    ============================================================ */
 function todayKey(d=new Date()){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
-function bn(n){ return String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]); }
+function bn(n){
+  if (getCurrentLang() === 'en') return String(n);
+  return String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
+}
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function toast(msg,type='success'){
   const t=document.createElement('div');
@@ -1238,16 +1502,16 @@ document.documentElement.setAttribute('data-theme', localStorage.getItem('theme'
    AUTH
    ============================================================ */
 async function doLogin(){
-  if (!fbReady) return toast('☁️ সংযোগ তৈরি হচ্ছে','info');
+  if (!fbReady) return toast('☁️ Connecting...','info');
   const cls = document.getElementById('loginClass').value;
   const pw = document.getElementById('loginPass').value;
-  if (!cls) return toast('শ্রেণি সিলেক্ট করুন','error');
+  if (!cls) return toast(getCurrentLang()==='bn'?'শ্রেণি সিলেক্ট করুন':'Select a class','error');
   currentClass = cls;
-  toast('☁️ লোড হচ্ছে...','info');
+  toast('☁️ Loading...','info');
   try {
     await loadFromCloud();
     const storedPass = localStorage.getItem('cached_pass_'+currentClass) || DEFAULT_PASS;
-    if (pw !== storedPass) { currentClass=''; return toast('ভুল পাসওয়ার্ড!','error'); }
+    if (pw !== storedPass) { currentClass=''; return toast(getCurrentLang()==='bn'?'ভুল পাসওয়ার্ড!':'Wrong password!','error'); }
     localStorage.setItem('session', cls);
     document.getElementById('loginWrap').classList.add('hidden');
     document.getElementById('app').classList.add('active');
@@ -1255,16 +1519,16 @@ async function doLogin(){
     document.getElementById('liveBadge').classList.remove('hidden');
     startLiveSync();
     switchTab('dashboard');
-    toast('✅ লগইন সফল','success');
+    toast(getCurrentLang()==='bn'?'✅ লগইন সফল':'✅ Login successful','success');
   } catch(err){
     currentClass='';
     console.error(err);
-    toast('❌ সংযোগ ব্যর্থ','error');
+    toast(getCurrentLang()==='bn'?'❌ সংযোগ ব্যর্থ':'❌ Connection failed','error');
   }
 }
 
 function logout(){
-  if (!confirm('লগআউট?')) return;
+  if (!confirm(getCurrentLang()==='bn'?'লগআউট?':'Logout?')) return;
   if (unsubListener) unsubListener();
   localStorage.removeItem('session');
   location.reload();
@@ -1295,17 +1559,22 @@ function renderDashboard(){
   if (heroClassEl) heroClassEl.textContent = currentClass;
   if (heroDateEl) {
     const d = new Date();
-    const months = ['জানু','ফেব','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্ট','অক্টো','নভে','ডিসে'];
-    heroDateEl.textContent = bn(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + bn(d.getFullYear());
+    if (getCurrentLang() === 'bn'){
+      const months = ['জানু','ফেব','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্ট','অক্টো','নভে','ডিসে'];
+      heroDateEl.textContent = bn(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + bn(d.getFullYear());
+    } else {
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      heroDateEl.textContent = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
   }
 
-  const t = students.length;
+  const total = students.length;
   const today = attendance[todayKey()] || {};
   let p=0, a=0;
   students.forEach((_,i)=>{ if (today[i]==='A') a++; else p++; });
-  const rate = t ? Math.round(p/t*100) : 0;
+  const rate = total ? Math.round(p/total*100) : 0;
 
-  animateNumber('stTotal', t);
+  animateNumber('stTotal', total);
   animateNumber('stPresent', p);
   animateNumber('stAbsent', a);
 
@@ -1364,21 +1633,21 @@ function renderWhatsAppBanner(){
   const wrap = document.getElementById('waBannerWrap');
   if (!wrap) return;
   if (!whatsapp.link){ wrap.innerHTML = ''; return; }
-  const groupName = whatsapp.name || (currentClass + ' গ্রুপ');
+  const groupName = whatsapp.name || (currentClass + ' Group');
   wrap.innerHTML = `
     <div class="wa-banner">
       <div class="wa-icon">💬</div>
       <div class="wa-info">
         <h3>${escapeHtml(groupName)}</h3>
-        <p>ট্যাপ করে WhatsApp গ্রুপ খুলুন</p>
+        <p>${getCurrentLang()==='bn'?'ট্যাপ করে WhatsApp গ্রুপ খুলুন':'Tap to open WhatsApp group'}</p>
       </div>
       <div class="wa-actions">
-        <button class="btn primary" onclick="openWhatsAppGroup()">গ্রুপ খুলুন</button>
+        <button class="btn primary" onclick="openWhatsAppGroup()">${getCurrentLang()==='bn'?'গ্রুপ খুলুন':'Open Group'}</button>
       </div>
     </div>`;
 }
 function openWhatsAppGroup(){
-  if (!whatsapp.link) return toast('গ্রুপ লিংক নেই','error');
+  if (!whatsapp.link) return toast(getCurrentLang()==='bn'?'গ্রুপ লিংক নেই':'No group link','error');
   window.open(whatsapp.link, '_blank');
 }
 
@@ -1428,23 +1697,24 @@ function renderStudents(){
   if (q) filtered = filtered.filter(s=> (s.name||'').toLowerCase().includes(q) || (s.roll||'').toLowerCase().includes(q) || (s.mobile||'').toLowerCase().includes(q));
 
   if (!filtered.length){
-    list.innerHTML = '<div class="empty"><div class="icon">👥</div><p>কোনো শিক্ষার্থী নেই</p></div>';
+    list.innerHTML = `<div class="empty"><div class="icon">👥</div><p>${getCurrentLang()==='bn'?'কোনো শিক্ষার্থী নেই':'No students'}</p></div>`;
     return;
   }
   list.innerHTML = filtered.map(s=>{
     const isAbsent = today[s._i]==='A';
     const stats = getStudentStats(s._i);
     const grade = getGrade(stats.pct);
+    const rollLabel = getCurrentLang()==='bn' ? 'রোল' : 'Roll';
     return `<div class="student-row ${isAbsent?'absent':'present'} student-card">
       <div class="avatar ${isAbsent?'absent':''}" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">${escapeHtml((s.name||'?').charAt(0))}</div>
       <div class="student-info" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">
         <div class="name">${escapeHtml(s.name)}
           <span class="grade-badge ${grade.cls}">${grade.label} • ${bn(stats.pct)}%</span>
         </div>
-        <div class="meta">রোল: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</div>
+        <div class="meta">${rollLabel}: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</div>
       </div>
       <div class="row-actions">
-        <button class="btn btn-purple btn-sm" onclick="event.stopPropagation();openReportCard(${s._i})" title="রিপোর্ট কার্ড">🖨️</button>
+        <button class="btn btn-purple btn-sm" onclick="event.stopPropagation();openReportCard(${s._i})" title="Report Card">🖨️</button>
         <button class="btn btn-info btn-sm" onclick="event.stopPropagation();editStudent(${s._i})">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteStudent(${s._i})">🗑️</button>
       </div>
@@ -1460,6 +1730,7 @@ function openStudentAnalytics(idx){
   if (!s) return;
   const stats = getStudentStats(idx);
   const grade = getGrade(stats.pct);
+  const L = getCurrentLang();
 
   const monthsMap = {};
   Object.keys(attendance).forEach(k=>{
@@ -1474,32 +1745,40 @@ function openStudentAnalytics(idx){
   let monthlyHtml = '';
   Object.keys(monthsMap).sort().reverse().slice(0,6).forEach(mk=>{
     const [y,m] = mk.split('-');
-    const label = new Date(y, m-1, 1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+    const label = new Date(y, m-1, 1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
     const { p, a } = monthsMap[mk];
     const tot = p+a;
     const pct = tot?Math.round(p/tot*100):0;
     monthlyHtml += `<div class="analytics-cell"><div class="lbl">${label}</div><div class="num">${bn(pct)}%</div><div style="font-size:11px;color:var(--muted)">${bn(p)}✓ ${bn(a)}✗</div></div>`;
   });
 
+  const labels = L==='bn' ? {
+    present: 'উপস্থিত', absent: 'অনুপস্থিত', total: 'মোট দিন', rate: 'উপস্থিতির হার',
+    grade: 'গ্রেড', recent: 'সাম্প্রতিক মাস', close: 'বন্ধ', report: '🖨️ রিপোর্ট কার্ড', roll: 'রোল'
+  } : {
+    present: 'Present', absent: 'Absent', total: 'Total Days', rate: 'Attendance Rate',
+    grade: 'Grade', recent: 'Recent Months', close: 'Close', report: '🖨️ Report Card', roll: 'Roll'
+  };
+
   openModal(`
     <div class="analytics-header">
       <div class="analytics-avatar">${escapeHtml((s.name||'?').charAt(0))}</div>
       <div class="analytics-info">
         <h3>${escapeHtml(s.name)}</h3>
-        <p>রোল: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</p>
-        <p style="margin-top:4px"><span class="grade-badge ${grade.cls}">গ্রেড: ${grade.label}</span></p>
+        <p>${labels.roll}: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</p>
+        <p style="margin-top:4px"><span class="grade-badge ${grade.cls}">${labels.grade}: ${grade.label}</span></p>
       </div>
     </div>
     <div class="analytics-grid">
-      <div class="analytics-cell"><div class="lbl">উপস্থিত</div><div class="num" style="color:var(--success)">${bn(stats.p)}</div></div>
-      <div class="analytics-cell"><div class="lbl">অনুপস্থিত</div><div class="num" style="color:var(--danger)">${bn(stats.a)}</div></div>
-      <div class="analytics-cell"><div class="lbl">মোট দিন</div><div class="num">${bn(stats.total)}</div></div>
-      <div class="analytics-cell"><div class="lbl">উপস্থিতির হার</div><div class="num" style="color:var(--accent)">${bn(stats.pct)}%</div></div>
+      <div class="analytics-cell"><div class="lbl">${labels.present}</div><div class="num" style="color:var(--success)">${bn(stats.p)}</div></div>
+      <div class="analytics-cell"><div class="lbl">${labels.absent}</div><div class="num" style="color:var(--danger)">${bn(stats.a)}</div></div>
+      <div class="analytics-cell"><div class="lbl">${labels.total}</div><div class="num">${bn(stats.total)}</div></div>
+      <div class="analytics-cell"><div class="lbl">${labels.rate}</div><div class="num" style="color:var(--accent)">${bn(stats.pct)}%</div></div>
     </div>
-    ${monthlyHtml ? `<h3 style="font-size:14px;margin-top:18px;margin-bottom:8px;color:var(--muted)">সাম্প্রতিক মাস</h3><div class="analytics-grid">${monthlyHtml}</div>` : ''}
+    ${monthlyHtml ? `<h3 style="font-size:14px;margin-top:18px;margin-bottom:8px;color:var(--muted)">${labels.recent}</h3><div class="analytics-grid">${monthlyHtml}</div>` : ''}
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">বন্ধ</button>
-      <button class="btn btn-purple" onclick="closeModal();openReportCard(${idx})">🖨️ রিপোর্ট কার্ড</button>
+      <button class="btn btn-ghost" onclick="closeModal()">${labels.close}</button>
+      <button class="btn btn-purple" onclick="closeModal();openReportCard(${idx})">${labels.report}</button>
     </div>
   `);
 }
@@ -1511,15 +1790,16 @@ function renderLeaderboard(){
   const sel = document.getElementById('monthSelect');
   const mk = sel?.value;
   const labelEl = document.getElementById('leaderMonth');
+  const L = getCurrentLang();
   if (!mk){
-    labelEl.textContent = 'এই মাস';
+    labelEl.textContent = L==='bn'?'এই মাস':'This month';
   } else {
     const [y,m] = mk.split('-').map(Number);
-    labelEl.textContent = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+    labelEl.textContent = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
   }
 
   if (!students.length){
-    document.getElementById('topList').innerHTML = '<div class="empty" style="padding:20px"><p>ডেটা নেই</p></div>';
+    document.getElementById('topList').innerHTML = `<div class="empty" style="padding:20px"><p>${L==='bn'?'ডেটা নেই':'No data'}</p></div>`;
     document.getElementById('bottomList').innerHTML = '';
     return;
   }
@@ -1566,29 +1846,44 @@ function openReportCard(idx){
   if (!s) return;
   const stats = getStudentStats(idx);
   const grade = getGrade(stats.pct);
-  const monthLabel = new Date().toLocaleString('bn-BD',{month:'long',year:'numeric'});
+  const L = getCurrentLang();
+  const monthLabel = new Date().toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+
+  const labels = L==='bn' ? {
+    name: 'নাম', roll: 'রোল', class: 'শ্রেণি', mobile: 'মোবাইল',
+    present: 'উপস্থিত', absent: 'অনুপস্থিত', total: 'মোট দিন', rate: 'হার', grade: 'গ্রেড',
+    date: 'তারিখ', sign: 'শিক্ষকের স্বাক্ষর',
+    title: 'উপস্থিতি রিপোর্ট কার্ড',
+    close: 'বন্ধ', print: '🖨️ প্রিন্ট / PDF'
+  } : {
+    name: 'Name', roll: 'Roll', class: 'Class', mobile: 'Mobile',
+    present: 'Present', absent: 'Absent', total: 'Total Days', rate: 'Rate', grade: 'Grade',
+    date: 'Date', sign: "Teacher's Signature",
+    title: 'Attendance Report Card',
+    close: 'Close', print: '🖨️ Print / PDF'
+  };
 
   const html = `
     <div id="reportCard" style="background:#fff;color:#0f172a;padding:20px;border-radius:14px">
       <div style="text-align:center;border-bottom:3px double #0b3d2e;padding-bottom:12px;margin-bottom:14px">
         <img src="https://i.imgur.com/kthmVIB.png" style="width:60px;height:60px;border-radius:50%;border:2px solid #f4b400" onerror="this.style.display='none'">
         <h2 style="color:#0b3d2e;font-size:16px;margin-top:6px">Momtaj Uddin Business Management College</h2>
-        <p style="font-size:12px;color:#64748b">উপস্থিতি রিপোর্ট কার্ড — ${monthLabel}</p>
+        <p style="font-size:12px;color:#64748b">${labels.title} — ${monthLabel}</p>
       </div>
       <table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:14px">
-        <tr><td style="padding:5px;font-weight:600">নাম</td><td style="padding:5px">${escapeHtml(s.name)}</td></tr>
-        <tr><td style="padding:5px;font-weight:600">রোল</td><td style="padding:5px">${escapeHtml(s.roll||'-')}</td></tr>
-        <tr><td style="padding:5px;font-weight:600">শ্রেণি</td><td style="padding:5px">${escapeHtml(currentClass)}</td></tr>
-        <tr><td style="padding:5px;font-weight:600">মোবাইল</td><td style="padding:5px">${escapeHtml(s.mobile||'-')}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">${labels.name}</td><td style="padding:5px">${escapeHtml(s.name)}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">${labels.roll}</td><td style="padding:5px">${escapeHtml(s.roll||'-')}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">${labels.class}</td><td style="padding:5px">${escapeHtml(currentClass)}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">${labels.mobile}</td><td style="padding:5px">${escapeHtml(s.mobile||'-')}</td></tr>
       </table>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead>
           <tr style="background:#0b3d2e;color:#fff">
-            <th style="padding:8px">উপস্থিত</th>
-            <th style="padding:8px">অনুপস্থিত</th>
-            <th style="padding:8px">মোট দিন</th>
-            <th style="padding:8px">হার</th>
-            <th style="padding:8px">গ্রেড</th>
+            <th style="padding:8px">${labels.present}</th>
+            <th style="padding:8px">${labels.absent}</th>
+            <th style="padding:8px">${labels.total}</th>
+            <th style="padding:8px">${labels.rate}</th>
+            <th style="padding:8px">${labels.grade}</th>
           </tr>
         </thead>
         <tbody>
@@ -1602,13 +1897,13 @@ function openReportCard(idx){
         </tbody>
       </table>
       <div style="margin-top:24px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
-        <div>তারিখ: ${bn(new Date().getDate())}/${bn(new Date().getMonth()+1)}/${bn(new Date().getFullYear())}</div>
-        <div>শিক্ষকের স্বাক্ষর: ________________</div>
+        <div>${labels.date}: ${bn(new Date().getDate())}/${bn(new Date().getMonth()+1)}/${bn(new Date().getFullYear())}</div>
+        <div>${labels.sign}: ________________</div>
       </div>
     </div>
     <div class="modal-actions no-print">
-      <button class="btn btn-ghost" onclick="closeModal()">বন্ধ</button>
-      <button class="btn btn-primary" onclick="printReportCard()">🖨️ প্রিন্ট / PDF</button>
+      <button class="btn btn-ghost" onclick="closeModal()">${labels.close}</button>
+      <button class="btn btn-primary" onclick="printReportCard()">${labels.print}</button>
     </div>
   `;
   openModal(html);
@@ -1640,16 +1935,17 @@ function renderHeatmap(){
   const mk = sel?.value;
   const grid = document.getElementById('heatmapGrid');
   const labelEl = document.getElementById('heatMonth');
+  const L = getCurrentLang();
   if (!mk){
     grid.innerHTML = '';
     return;
   }
   const [y,m] = mk.split('-').map(Number);
   const days = new Date(y,m,0).getDate();
-  labelEl.textContent = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+  labelEl.textContent = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
 
   if (!students.length){
-    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><p>শিক্ষার্থী যোগ করুন</p></div>';
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><p>${L==='bn'?'শিক্ষার্থী যোগ করুন':'Add students'}</p></div>`;
     return;
   }
 
@@ -1695,57 +1991,62 @@ function fireConfetti(count=80){
    STUDENT MODAL / CRUD
    ============================================================ */
 function openAddStudent(){
+  const L = getCurrentLang();
   openModal(`
-    <h3>➕ নতুন শিক্ষার্থী</h3>
-    <label>নাম *</label><input id="mName" placeholder="শিক্ষার্থীর নাম">
-    <label>রোল</label><input id="mRoll" placeholder="রোল নম্বর">
-    <label>মোবাইল</label><input id="mMobile" placeholder="01XXXXXXXXX">
+    <h3>${L==='bn'?'➕ নতুন শিক্ষার্থী':'➕ New Student'}</h3>
+    <label>${L==='bn'?'নাম *':'Name *'}</label><input id="mName" placeholder="${L==='bn'?'শিক্ষার্থীর নাম':'Student name'}">
+    <label>${L==='bn'?'রোল':'Roll'}</label><input id="mRoll" placeholder="${L==='bn'?'রোল নম্বর':'Roll number'}">
+    <label>${L==='bn'?'মোবাইল':'Mobile'}</label><input id="mMobile" placeholder="01XXXXXXXXX">
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
-      <button class="btn btn-primary" onclick="saveNewStudent()">✅ যোগ করুন</button>
+      <button class="btn btn-ghost" onclick="closeModal()">${L==='bn'?'বাতিল':'Cancel'}</button>
+      <button class="btn btn-primary" onclick="saveNewStudent()">${L==='bn'?'✅ যোগ করুন':'✅ Add'}</button>
     </div>`);
   setTimeout(()=>document.getElementById('mName').focus(),100);
 }
 function saveNewStudent(){
+  const L = getCurrentLang();
   const name=document.getElementById('mName').value.trim();
   const roll=document.getElementById('mRoll').value.trim();
   const mobile=document.getElementById('mMobile').value.trim();
-  if(!name) return toast('নাম দিন','error');
-  if(roll && students.some(s=>s.roll===roll)) return toast('এই রোল আগেই আছে!','error');
+  if(!name) return toast(L==='bn'?'নাম দিন':'Enter name','error');
+  if(roll && students.some(s=>s.roll===roll)) return toast(L==='bn'?'এই রোল আগেই আছে!':'Roll already exists!','error');
   pushHistory('students', JSON.parse(JSON.stringify(students)));
   students.push({name,roll,mobile});
   saveAll(); closeModal(); renderStudents(); renderDashboard();
-  toast('✅ শিক্ষার্থী যোগ হয়েছে','success');
+  toast(L==='bn'?'✅ শিক্ষার্থী যোগ হয়েছে':'✅ Student added','success');
 }
 function editStudent(i){
   const s=students[i];
+  const L = getCurrentLang();
   openModal(`
-    <h3>✏️ সম্পাদনা</h3>
-    <label>নাম</label><input id="mName" value="${escapeHtml(s.name)}">
-    <label>রোল</label><input id="mRoll" value="${escapeHtml(s.roll||'')}">
-    <label>মোবাইল</label><input id="mMobile" value="${escapeHtml(s.mobile||'')}">
+    <h3>${L==='bn'?'✏️ সম্পাদনা':'✏️ Edit'}</h3>
+    <label>${L==='bn'?'নাম':'Name'}</label><input id="mName" value="${escapeHtml(s.name)}">
+    <label>${L==='bn'?'রোল':'Roll'}</label><input id="mRoll" value="${escapeHtml(s.roll||'')}">
+    <label>${L==='bn'?'মোবাইল':'Mobile'}</label><input id="mMobile" value="${escapeHtml(s.mobile||'')}">
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">বাতিল</button>
-      <button class="btn btn-primary" onclick="updateStudent(${i})">💾 সেভ</button>
+      <button class="btn btn-ghost" onclick="closeModal()">${L==='bn'?'বাতিল':'Cancel'}</button>
+      <button class="btn btn-primary" onclick="updateStudent(${i})">${L==='bn'?'💾 সেভ':'💾 Save'}</button>
     </div>`);
 }
 function updateStudent(i){
+  const L = getCurrentLang();
   const name=document.getElementById('mName').value.trim();
   const roll=document.getElementById('mRoll').value.trim();
   const mobile=document.getElementById('mMobile').value.trim();
-  if(!name) return toast('নাম দিন','error');
-  if(roll && students.some((s,idx)=>idx!==i && s.roll===roll)) return toast('এই রোল আগেই আছে!','error');
+  if(!name) return toast(L==='bn'?'নাম দিন':'Enter name','error');
+  if(roll && students.some((s,idx)=>idx!==i && s.roll===roll)) return toast(L==='bn'?'এই রোল আগেই আছে!':'Roll already exists!','error');
   pushHistory('students', JSON.parse(JSON.stringify(students)));
   students[i]={name,roll,mobile};
   saveAll(); closeModal(); renderStudents(); renderDashboard();
-  toast('✅ আপডেট হয়েছে','success');
+  toast(L==='bn'?'✅ আপডেট হয়েছে':'✅ Updated','success');
 }
 function deleteStudent(i){
-  if(!confirm('ডিলিট করবেন?')) return;
+  const L = getCurrentLang();
+  if(!confirm(L==='bn'?'ডিলিট করবেন?':'Delete?')) return;
   pushHistory('delete-student', i, JSON.parse(JSON.stringify(students[i])));
   students.splice(i,1);
   saveAll(); renderStudents(); renderDashboard();
-  toast('ডিলিট হয়েছে — Undo চাপুন','info');
+  toast(L==='bn'?'ডিলিট হয়েছে — Undo চাপুন':'Deleted — press Undo','info');
 }
 
 /* ============================================================
@@ -1754,10 +2055,11 @@ function deleteStudent(i){
 function initMonthly(){
   const sel = document.getElementById('monthSelect');
   const opts = []; const now = new Date();
+  const L = getCurrentLang();
   for (let i=0;i<12;i++){
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
     const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-    const label = d.toLocaleString('bn-BD',{month:'long',year:'numeric'});
+    const label = d.toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
     opts.push(`<option value="${k}">${label}</option>`);
   }
   sel.innerHTML = opts.join('');
@@ -1769,15 +2071,20 @@ function renderMonthly(){
   if (!mk) return;
   const [y,m] = mk.split('-').map(Number);
   const days = new Date(y,m,0).getDate();
-  document.getElementById('monthTitle').textContent = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
+  const L = getCurrentLang();
+  document.getElementById('monthTitle').textContent = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
   if (!students.length){
-    document.getElementById('monthlyTable').innerHTML = '<div class="empty"><div class="icon">📅</div><p>শিক্ষার্থী যোগ করুন</p></div>';
+    document.getElementById('monthlyTable').innerHTML = `<div class="empty"><div class="icon">📅</div><p>${L==='bn'?'শিক্ষার্থী যোগ করুন':'Add students'}</p></div>`;
     return;
   }
   const today = new Date();
   const isCurrentMonth = (today.getFullYear()===y && today.getMonth()+1===m);
 
-  let h = '<table><thead><tr><th style="position:sticky;left:0;z-index:3;background:var(--primary)">নাম</th><th>রোল</th>';
+  const nameLabel = L==='bn' ? 'নাম' : 'Name';
+  const rollLabel = L==='bn' ? 'রোল' : 'Roll';
+  const totalLabel = L==='bn' ? '📊 মোট' : '📊 Total';
+
+  let h = `<table><thead><tr><th style="position:sticky;left:0;z-index:3;background:var(--primary)">${nameLabel}</th><th>${rollLabel}</th>`;
   for (let d=1; d<=days; d++){
     const isToday = isCurrentMonth && today.getDate()===d;
     h += `<th class="${isToday?'today-col-h':''}">${bn(d)}</th>`;
@@ -1801,7 +2108,7 @@ function renderMonthly(){
     h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
   });
 
-  h += '<tr class="totals-row"><td class="name-col">📊 মোট</td><td>-</td>';
+  h += `<tr class="totals-row"><td class="name-col">${totalLabel}</td><td>-</td>`;
   for (let d=1; d<=days; d++){
     const k = y+'-'+m+'-'+d;
     const rec = attendance[k] || {};
@@ -1835,12 +2142,16 @@ function checkAllPresentConfetti(){
   students.forEach((_,i)=>{ if (today[i]==='A') allPresent = false; });
   if (allPresent){
     fireConfetti(120);
-    toast('🎉 সবাই আজ উপস্থিত!','success');
+    toast(getCurrentLang()==='bn'?'🎉 সবাই আজ উপস্থিত!':'🎉 Everyone present today!','success');
   }
 }
 
 function markToday(type){
-  if (!confirm(`আজকের সব শিক্ষার্থীকে ${type==='present'?'উপস্থিত':'অনুপস্থিত'} চিহ্নিত করবেন?`)) return;
+  const L = getCurrentLang();
+  const msg = type==='present'
+    ? (L==='bn'?'আজকের সব শিক্ষার্থীকে উপস্থিত চিহ্নিত করবেন?':'Mark all students present today?')
+    : (L==='bn'?'আজকের সব শিক্ষার্থীকে অনুপস্থিত চিহ্নিত করবেন?':'Mark all students absent today?');
+  if (!confirm(msg)) return;
   const k = todayKey();
   const snapshot = attendance[k] ? JSON.parse(JSON.stringify(attendance[k])) : null;
   pushHistory('bulk', k, snapshot);
@@ -1848,28 +2159,29 @@ function markToday(type){
   students.forEach((_,i)=>{ attendance[k][i] = type==='present'?'P':'A'; });
   if (type === 'present') fireConfetti(100);
   saveAll(); renderMonthly(); renderDashboard();
-  toast('✅ সম্পন্ন — Undo চাপুন ফেরাতে','success');
+  toast(L==='bn'?'✅ সম্পন্ন — Undo চাপুন':'✅ Done — press Undo','success');
 }
 
 function exportMonthly(){
   const mk = document.getElementById('monthSelect').value;
   const [y,m] = mk.split('-').map(Number);
   const days = new Date(y,m,0).getDate();
+  const L = getCurrentLang();
   const rows = students.map((s,i)=>{
-    const row = {নাম:s.name, রোল:s.roll};
+    const row = {[L==='bn'?'নাম':'Name']:s.name, [L==='bn'?'রোল':'Roll']:s.roll};
     let p=0,a=0;
     for (let d=1; d<=days; d++){
       const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
       row[bn(d)] = st; if(st==='P')p++; if(st==='A')a++;
     }
-    row['মোট P']=p; row['মোট A']=a;
+    row[L==='bn'?'মোট P':'Total P']=p; row[L==='bn'?'মোট A':'Total A']=a;
     return row;
   });
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Monthly');
   XLSX.writeFile(wb, `Hazira_${currentClass}_${mk}.xlsx`);
-  toast('✅ Excel ডাউনলোড','success');
+  toast(L==='bn'?'✅ Excel ডাউনলোড':'✅ Excel downloaded','success');
 }
 
 /* ============================================================
@@ -1879,8 +2191,9 @@ function shareMonthlyWhatsApp(){
   const mk = document.getElementById('monthSelect').value;
   const [y,m] = mk.split('-').map(Number);
   const days = new Date(y,m,0).getDate();
-  const monthLabel = new Date(y,m-1,1).toLocaleString('bn-BD',{month:'long',year:'numeric'});
-  let msg = `📊 *হাজিরা রিপোর্ট*\n🏫 Momtaj Uddin Business Management College\n📚 ${currentClass} — ${monthLabel}\n\n`;
+  const L = getCurrentLang();
+  const monthLabel = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+  let msg = `📊 *${L==='bn'?'হাজিরা রিপোর্ট':'Attendance Report'}*\n🏫 Momtaj Uddin Business Management College\n📚 ${currentClass} — ${monthLabel}\n\n`;
   students.forEach((s,i)=>{
     let p=0, a=0;
     for (let d=1; d<=days; d++){
@@ -1893,7 +2206,7 @@ function shareMonthlyWhatsApp(){
   });
   if (whatsapp.link){
     navigator.clipboard.writeText(msg).then(()=>{
-      toast('রিপোর্ট কপি হয়েছে','success');
+      toast(L==='bn'?'রিপোর্ট কপি হয়েছে':'Report copied','success');
       window.open(whatsapp.link, '_blank');
     }).catch(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); });
   } else {
@@ -1902,12 +2215,13 @@ function shareMonthlyWhatsApp(){
 }
 
 function sendNoticeWhatsApp(){
-  const t = document.getElementById('noticeInput').value.trim();
-  if (!t) return toast('নোটিশ লিখুন','error');
-  const msg = `📢 *${currentClass}*\n\n${t}\n\n— Momtaj Uddin Business Management College`;
+  const L = getCurrentLang();
+  const noticeText = document.getElementById('noticeInput').value.trim();
+  if (!noticeText) return toast(L==='bn'?'নোটিশ লিখুন':'Enter a notice','error');
+  const msg = `📢 *${currentClass}*\n\n${noticeText}\n\n— Momtaj Uddin Business Management College`;
   if (whatsapp.link){
     navigator.clipboard.writeText(msg).then(()=>{
-      toast('নোটিশ কপি হয়েছে','success');
+      toast(L==='bn'?'নোটিশ কপি হয়েছে':'Notice copied','success');
       window.open(whatsapp.link, '_blank');
     }).catch(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); });
   } else {
@@ -1919,13 +2233,16 @@ function sendNoticeWhatsApp(){
    RESULTS
    ============================================================ */
 function renderResults(){
+  const L = getCurrentLang();
   if (!students.length){
-    document.getElementById('resultTable').innerHTML = '<div class="empty"><div class="icon">🏆</div><p>শিক্ষার্থী নেই</p></div>';
+    document.getElementById('resultTable').innerHTML = `<div class="empty"><div class="icon">🏆</div><p>${L==='bn'?'শিক্ষার্থী নেই':'No students'}</p></div>`;
     return;
   }
-  let h = '<table><thead><tr><th>নাম</th><th>রোল</th>';
-  for (let i=0;i<13;i++) h += `<th><input value="${escapeHtml(subNames[i].startsWith('বিষয়')?'':subNames[i])}" placeholder="বিষয় ${bn(i+1)}" oninput="setSubName(${i},this.value)" style="width:80px;padding:4px;background:transparent;color:#fff;border:none;text-align:center;font-weight:600"></th>`;
-  h += '<th>মোট</th><th>GPA</th></tr></thead><tbody>';
+  const nameLabel = L==='bn'?'নাম':'Name';
+  const rollLabel = L==='bn'?'রোল':'Roll';
+  let h = `<table><thead><tr><th>${nameLabel}</th><th>${rollLabel}</th>`;
+  for (let i=0;i<13;i++) h += `<th><input value="${escapeHtml(subNames[i].startsWith('বিষয়')?'':subNames[i])}" placeholder="${bn(i+1)}" oninput="setSubName(${i},this.value)" style="width:80px;padding:4px;background:transparent;color:#fff;border:none;text-align:center;font-weight:600"></th>`;
+  h += `<th>${L==='bn'?'মোট':'Total'}</th><th>GPA</th></tr></thead><tbody>`;
   students.forEach((s,i)=>{
     const r = results[i]||{};
     let total=0, count=0;
@@ -1948,17 +2265,19 @@ function setMark(i,j,v){ if(!results[i]) results[i]={}; results[i]['s'+j]=v; sav
    NOTICE
    ============================================================ */
 function addNotice(){
-  const t = document.getElementById('noticeInput').value.trim();
-  if (!t) return toast('নোটিশ লিখুন','error');
-  notices.unshift({text:t,time:new Date().toLocaleString('bn-BD')});
+  const L = getCurrentLang();
+  const noticeText = document.getElementById('noticeInput').value.trim();
+  if (!noticeText) return toast(L==='bn'?'নোটিশ লিখুন':'Enter a notice','error');
+  notices.unshift({text:noticeText,time:new Date().toLocaleString(L==='bn'?'bn-BD':'en-US')});
   saveAll();
   document.getElementById('noticeInput').value='';
   renderNotices();
-  toast('✅ নোটিশ যোগ হয়েছে','success');
+  toast(L==='bn'?'✅ নোটিশ যোগ হয়েছে':'✅ Notice added','success');
 }
 function renderNotices(){
   const l = document.getElementById('noticeList');
-  if (!notices.length){ l.innerHTML='<div class="empty"><div class="icon">📢</div><p>কোনো নোটিশ নেই</p></div>'; return; }
+  const L = getCurrentLang();
+  if (!notices.length){ l.innerHTML=`<div class="empty"><div class="icon">📢</div><p>${L==='bn'?'কোনো নোটিশ নেই':'No notices'}</p></div>`; return; }
   l.innerHTML = notices.map((n,i)=>`
     <div class="notice-item">
       <div class="text">${escapeHtml(n.text)}<div class="time">${escapeHtml(n.time)}</div></div>
@@ -1969,7 +2288,7 @@ function deleteNotice(i){
   pushHistory('delete-notice', i, JSON.parse(JSON.stringify(notices[i])));
   notices.splice(i,1);
   saveAll(); renderNotices();
-  toast('ডিলিট — Undo চাপুন ফেরাতে','info');
+  toast(getCurrentLang()==='bn'?'ডিলিট — Undo চাপুন':'Deleted — press Undo','info');
 }
 
 /* ============================================================
@@ -1984,42 +2303,51 @@ function renderSettings(){
   if (nameEl) nameEl.value = whatsapp.name || '';
 }
 function saveWhatsAppSettings(){
+  const L = getCurrentLang();
   const link = document.getElementById('waGroupLink').value.trim();
   const name = document.getElementById('waGroupName').value.trim();
   if (link && !link.startsWith('https://chat.whatsapp.com/') && !link.startsWith('https://wa.me/')) {
-    if (!confirm('এই লিংকটি WhatsApp এর মতো দেখাচ্ছে না। তবুও সেভ করবেন?')) return;
+    if (!confirm(L==='bn'?'এই লিংকটি WhatsApp এর মতো দেখাচ্ছে না। তবুও সেভ করবেন?':'This doesn\'t look like a WhatsApp link. Save anyway?')) return;
   }
   whatsapp = { link, name };
   saveAll();
-  toast('✅ সেভ হয়েছে','success');
+  toast(L==='bn'?'✅ সেভ হয়েছে':'✅ Saved','success');
   renderWhatsAppBanner();
 }
 function testWhatsAppLink(){
   const link = document.getElementById('waGroupLink').value.trim();
-  if (!link) return toast('আগে লিংক দিন','error');
+  if (!link) return toast(getCurrentLang()==='bn'?'আগে লিংক দিন':'Enter link first','error');
   window.open(link, '_blank');
 }
 function clearWhatsAppSettings(){
-  if (!confirm('WhatsApp লিংক মুছবেন?')) return;
+  const L = getCurrentLang();
+  if (!confirm(L==='bn'?'WhatsApp লিংক মুছবেন?':'Remove WhatsApp link?')) return;
   whatsapp = { link:'', name:'' };
   saveAll();
   renderSettings();
   renderWhatsAppBanner();
-  toast('মুছে ফেলা হয়েছে','info');
+  toast(L==='bn'?'মুছে ফেলা হয়েছে':'Removed','info');
 }
 function changePassword(){
+  const L = getCurrentLang();
   const np = document.getElementById('newPass').value.trim();
-  if (np.length < 4) return toast('কমপক্ষে ৪ অক্ষর','error');
+  if (np.length < 4) return toast(L==='bn'?'কমপক্ষে ৪ অক্ষর':'At least 4 characters','error');
   localStorage.setItem('cached_pass_'+currentClass, np);
   window.fbFns.setDoc(cloudRef(), { password: np }, { merge: true })
-    .then(()=>{ toast('✅ পাসওয়ার্ড পরিবর্তন','success'); document.getElementById('newPass').value=''; })
-    .catch(e=>{ console.error(e); toast('❌ ব্যর্থ','error'); });
+    .then(()=>{ toast(L==='bn'?'✅ পাসওয়ার্ড পরিবর্তন':'✅ Password changed','success'); document.getElementById('newPass').value=''; })
+    .catch(e=>{ console.error(e); toast('❌ Failed','error'); });
 }
 
 /* ============================================================
-   AUTO LOGIN
+   INIT
    ============================================================ */
+applyA11yPrefs();
+applyTranslations();
+updateLangPills();
+
 window.addEventListener('load', async ()=>{
+  applyTranslations();
+  updateLangPills();
   const s = localStorage.getItem('session');
   if (s && fbReady){
     currentClass = s;
