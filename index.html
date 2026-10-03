@@ -417,6 +417,7 @@ th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);w
 th{background:var(--primary);color:#fff;font-weight:600;position:sticky;top:0;z-index:2}
 td{background:var(--card)}
 td.name-col{text-align:left;font-weight:600;position:sticky;left:0;background:var(--card);z-index:1}
+td.mobile-col{font-size:11px;color:var(--muted);text-align:left}
 .cell-P{color:var(--success);font-weight:700;cursor:pointer;user-select:none}
 .cell-A{color:var(--danger);font-weight:700;cursor:pointer;user-select:none}
 .cell-empty{color:var(--muted);cursor:pointer;opacity:.4;user-select:none}
@@ -1105,17 +1106,14 @@ function applyTranslations(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key = el.dataset.i18n;
     const trans = t(key);
-    // Handle elements with children (preserve inner spans like counters)
     if (el.children.length === 0){
       el.textContent = trans;
     } else {
-      // Only update the direct text node
       let updated = false;
       el.childNodes.forEach(node=>{
         if (node.nodeType === 3 && !updated){
           const trimmed = node.textContent.trim();
           if (trimmed) {
-            // find emoji prefix
             const emojiMatch = trimmed.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})+/u);
             const prefix = emojiMatch ? emojiMatch[0] + ' ' : '';
             node.textContent = prefix + trans.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}️\s]+/u, '');
@@ -1311,7 +1309,6 @@ function applyA11yPrefs(){
   updateTextLabels();
 }
 
-/* Preload voices */
 if (window.speechSynthesis){
   window.speechSynthesis.onvoiceschanged = ()=>{};
   window.speechSynthesis.getVoices();
@@ -2050,7 +2047,7 @@ function deleteStudent(i){
 }
 
 /* ============================================================
-   MONTHLY (HAZIRA)
+   MONTHLY (HAZIRA) — with Mobile column
    ============================================================ */
 function initMonthly(){
   const sel = document.getElementById('monthSelect');
@@ -2082,9 +2079,13 @@ function renderMonthly(){
 
   const nameLabel = L==='bn' ? 'নাম' : 'Name';
   const rollLabel = L==='bn' ? 'রোল' : 'Roll';
+  const mobileLabel = L==='bn' ? '📱 মোবাইল' : '📱 Mobile';
   const totalLabel = L==='bn' ? '📊 মোট' : '📊 Total';
 
-  let h = `<table><thead><tr><th style="position:sticky;left:0;z-index:3;background:var(--primary)">${nameLabel}</th><th>${rollLabel}</th>`;
+  let h = `<table><thead><tr>
+    <th style="position:sticky;left:0;z-index:3;background:var(--primary)">${nameLabel}</th>
+    <th>${rollLabel}</th>
+    <th>${mobileLabel}</th>`;
   for (let d=1; d<=days; d++){
     const isToday = isCurrentMonth && today.getDate()===d;
     h += `<th class="${isToday?'today-col-h':''}">${bn(d)}</th>`;
@@ -2093,7 +2094,10 @@ function renderMonthly(){
 
   students.forEach((s,i)=>{
     let p=0, a=0;
-    h += `<tr><td class="name-col">${escapeHtml(s.name)}</td><td>${escapeHtml(s.roll||'-')}</td>`;
+    h += `<tr>
+      <td class="name-col">${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.roll||'-')}</td>
+      <td class="mobile-col">${escapeHtml(s.mobile||'-')}</td>`;
     for (let d=1; d<=days; d++){
       const k = y+'-'+m+'-'+d;
       const st = (attendance[k]||{})[i] || '';
@@ -2108,7 +2112,8 @@ function renderMonthly(){
     h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
   });
 
-  h += `<tr class="totals-row"><td class="name-col">${totalLabel}</td><td>-</td>`;
+  // Totals row — 3 left columns (Name, Roll, Mobile) then days
+  h += `<tr class="totals-row"><td class="name-col">${totalLabel}</td><td>-</td><td>-</td>`;
   for (let d=1; d<=days; d++){
     const k = y+'-'+m+'-'+d;
     const rec = attendance[k] || {};
@@ -2162,22 +2167,58 @@ function markToday(type){
   toast(L==='bn'?'✅ সম্পন্ন — Undo চাপুন':'✅ Done — press Undo','success');
 }
 
+/* ============================================================
+   EXPORT EXCEL — FIXED: Name/Roll/Mobile forced to left
+   ============================================================ */
 function exportMonthly(){
   const mk = document.getElementById('monthSelect').value;
+  if (!mk) return toast('No month selected','error');
   const [y,m] = mk.split('-').map(Number);
   const days = new Date(y,m,0).getDate();
   const L = getCurrentLang();
+
+  const nameKey   = L==='bn' ? 'নাম' : 'Name';
+  const rollKey   = L==='bn' ? 'রোল' : 'Roll';
+  const mobileKey = L==='bn' ? 'মোবাইল' : 'Mobile';
+  const totalPKey = L==='bn' ? 'মোট P' : 'Total P';
+  const totalAKey = L==='bn' ? 'মোট A' : 'Total A';
+
+  // Build the header order explicitly — Name, Roll, Mobile first, then days, then totals
+  const header = [nameKey, rollKey, mobileKey];
+  for (let d=1; d<=days; d++) header.push(String(d)); // use plain numbers for day columns (cleaner)
+  header.push(totalPKey, totalAKey);
+
+  // Build rows
   const rows = students.map((s,i)=>{
-    const row = {[L==='bn'?'নাম':'Name']:s.name, [L==='bn'?'রোল':'Roll']:s.roll};
-    let p=0,a=0;
+    const row = {};
+    row[nameKey]   = s.name;
+    row[rollKey]   = s.roll || '';
+    row[mobileKey] = s.mobile || '';
+    let p=0, a=0;
     for (let d=1; d<=days; d++){
-      const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
-      row[bn(d)] = st; if(st==='P')p++; if(st==='A')a++;
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i] || '';
+      row[String(d)] = st === 'P' ? '✓' : st === 'A' ? '✗' : '';
+      if (st==='P') p++;
+      if (st==='A') a++;
     }
-    row[L==='bn'?'মোট P':'Total P']=p; row[L==='bn'?'মোট A':'Total A']=a;
+    row[totalPKey] = p;
+    row[totalAKey] = a;
     return row;
   });
-  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Force header order via {header: [...]}
+  const ws = XLSX.utils.json_to_sheet(rows, { header });
+
+  // Column widths — Name wide, Roll/Mobile medium, days narrow, totals small
+  ws['!cols'] = [
+    { wch: 24 },  // Name
+    { wch: 10 },  // Roll
+    { wch: 14 },  // Mobile
+    ...Array(days).fill({ wch: 4 }),  // Day columns
+    { wch: 8 },   // Total P
+    { wch: 8 }    // Total A
+  ];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Monthly');
   XLSX.writeFile(wb, `Hazira_${currentClass}_${mk}.xlsx`);
@@ -2185,7 +2226,7 @@ function exportMonthly(){
 }
 
 /* ============================================================
-   WHATSAPP SHARE
+   WHATSAPP SHARE (with mobile)
    ============================================================ */
 function shareMonthlyWhatsApp(){
   const mk = document.getElementById('monthSelect').value;
@@ -2202,7 +2243,8 @@ function shareMonthlyWhatsApp(){
     }
     const total = p+a;
     const pct = total?Math.round(p/total*100):0;
-    msg += `• ${s.name}: ${p}✓ ${a}✗ (${pct}%)\n`;
+    const mobile = s.mobile ? ` 📱${s.mobile}` : '';
+    msg += `• ${s.name}${mobile}: ${p}✓ ${a}✗ (${pct}%)\n`;
   });
   if (whatsapp.link){
     navigator.clipboard.writeText(msg).then(()=>{
