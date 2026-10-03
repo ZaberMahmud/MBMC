@@ -397,13 +397,38 @@ main{padding:16px;max-width:1100px;margin:0 auto;width:100%;flex:1}
 .student-info{flex:1;min-width:0}
 .student-info .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .student-info .meta{font-size:12px;color:var(--muted);margin-top:2px}
-.row-actions{display:flex;gap:6px}
+.row-actions{display:flex;gap:6px;align-items:center}
 .grade-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:6px}
 .grade-A{background:#dcfce7;color:#166534}
 .grade-B{background:#dbeafe;color:#1e40af}
 .grade-C{background:#fef3c7;color:#92400e}
 .grade-D{background:#fed7aa;color:#9a3412}
 .grade-F{background:#fecaca;color:#991b1b}
+
+/* ================= REORDER BUTTONS ================= */
+.reorder-group{display:flex;flex-direction:column;gap:2px;margin-right:2px}
+.reorder-btn{
+  background:var(--bg);
+  color:var(--muted);
+  border:1.5px solid var(--border);
+  width:28px;
+  height:20px;
+  border-radius:6px;
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:all .15s;
+  padding:0;
+  line-height:1;
+}
+.reorder-btn:hover:not(:disabled){
+  background:var(--primary);
+  color:#fff;
+  border-color:var(--primary);
+}
+.reorder-btn:disabled{opacity:.3;cursor:not-allowed}
 
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--card);border:1.5px solid var(--border);color:var(--muted)}
@@ -521,7 +546,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 @media(max-width:640px){main{padding:12px}.card{padding:14px}.topbar-info h1{font-size:13px}.stat .value{font-size:22px}.wa-banner{flex-direction:column;align-items:stretch}.wa-banner .btn{flex:1}.a11y-fab.open{left:0}}
 
 @media print{
-  .topbar,.tabs,.toolbar,.row-actions,.live-badge,.hero-banner,.a11y-fab,.a11y-panel{display:none!important}
+  .topbar,.tabs,.toolbar,.row-actions,.live-badge,.hero-banner,.a11y-fab,.a11y-panel,.reorder-group{display:none!important}
   body{background:#fff;zoom:1}
   .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
 }
@@ -1340,6 +1365,7 @@ function pushHistory(type, a, b, c){
   else if (type === 'students') history.push({ type:'students', prev:a, t:Date.now() });
   else if (type === 'delete-student') history.push({ type:'delete-student', index:a, student:b, t:Date.now() });
   else if (type === 'delete-notice') history.push({ type:'delete-notice', index:a, notice:b, t:Date.now() });
+  else if (type === 'reorder') history.push({ type:'reorder', prevOrder:a, t:Date.now() });
   if (history.length > HISTORY_MAX) history.shift();
   updateUndoButton();
 }
@@ -1369,6 +1395,11 @@ async function undoLast(){
       students.splice(last.index, 0, last.student);
     } else if (last.type === 'delete-notice'){
       notices.splice(last.index, 0, last.notice);
+    } else if (last.type === 'reorder'){
+      // last.prevOrder is { students: [...], attendance: {...}, results: {...} }
+      students = JSON.parse(JSON.stringify(last.prevOrder.students));
+      attendance = JSON.parse(JSON.stringify(last.prevOrder.attendance));
+      results = JSON.parse(JSON.stringify(last.prevOrder.results));
     }
     await saveToCloud();
     const active = document.querySelector('.view.active')?.id;
@@ -1697,12 +1728,24 @@ function renderStudents(){
     list.innerHTML = `<div class="empty"><div class="icon">👥</div><p>${getCurrentLang()==='bn'?'কোনো শিক্ষার্থী নেই':'No students'}</p></div>`;
     return;
   }
+
+  // Show reorder buttons only in "All" view with no search (because reordering a filtered list is confusing)
+  const showReorder = (filter === 'all' && !q);
+
   list.innerHTML = filtered.map(s=>{
     const isAbsent = today[s._i]==='A';
     const stats = getStudentStats(s._i);
     const grade = getGrade(stats.pct);
     const rollLabel = getCurrentLang()==='bn' ? 'রোল' : 'Roll';
+    const canUp = showReorder && s._i > 0;
+    const canDown = showReorder && s._i < students.length - 1;
+    const reorderHtml = showReorder ? `
+      <div class="reorder-group">
+        <button class="reorder-btn" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveStudent(${s._i},-1)" title="Move Up">▲</button>
+        <button class="reorder-btn" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveStudent(${s._i},1)" title="Move Down">▼</button>
+      </div>` : '';
     return `<div class="student-row ${isAbsent?'absent':'present'} student-card">
+      ${reorderHtml}
       <div class="avatar ${isAbsent?'absent':''}" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">${escapeHtml((s.name||'?').charAt(0))}</div>
       <div class="student-info" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">
         <div class="name">${escapeHtml(s.name)}
@@ -1717,6 +1760,61 @@ function renderStudents(){
       </div>
     </div>`;
   }).join('');
+}
+
+/* ============================================================
+   REORDER STUDENTS (Move Up / Down)
+   ============================================================ */
+function moveStudent(idx, dir){
+  // dir = -1 for up, +1 for down
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= students.length) return;
+
+  // Snapshot full state for undo
+  const snapshot = {
+    students: JSON.parse(JSON.stringify(students)),
+    attendance: JSON.parse(JSON.stringify(attendance)),
+    results: JSON.parse(JSON.stringify(results))
+  };
+
+  // Helper: swap keys in an object map (attendance[day] = { idx: 'P'/'A' })
+  function swapIndexKeys(obj, i1, i2){
+    Object.keys(obj).forEach(day=>{
+      const rec = obj[day];
+      if (!rec) return;
+      const hasA = Object.prototype.hasOwnProperty.call(rec, i1);
+      const hasB = Object.prototype.hasOwnProperty.call(rec, i2);
+      const vA = rec[i1];
+      const vB = rec[i2];
+      if (hasA && hasB){ rec[i1] = vB; rec[i2] = vA; }
+      else if (hasA && !hasB){ rec[i2] = vA; delete rec[i1]; }
+      else if (!hasA && hasB){ rec[i1] = vB; delete rec[i2]; }
+    });
+  }
+
+  // Swap the two student entries
+  const tmp = students[idx];
+  students[idx] = students[newIdx];
+  students[newIdx] = tmp;
+
+  // Swap their attendance and result keys so history stays attached to the student
+  swapIndexKeys(attendance, String(idx), String(newIdx));
+  swapIndexKeys(results, String(idx), String(newIdx));
+
+  pushHistory('reorder', snapshot);
+  saveAll();
+
+  // Re-render everything that depends on student order
+  renderStudents();
+  renderDashboard();
+  // If the attendance tab is visible with the same order, refresh it too
+  const active = document.querySelector('.view.active')?.id;
+  if (active === 'view-monthly') renderMonthly();
+  if (active === 'view-leaderboard') renderLeaderboard();
+  if (active === 'view-heatmap') renderHeatmap();
+  if (active === 'view-results') renderResults();
+
+  toast(getCurrentLang()==='bn'?'✅ ক্রম পরিবর্তন হয়েছে':'✅ Order updated','success');
 }
 
 /* ============================================================
@@ -2112,7 +2210,6 @@ function renderMonthly(){
     h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
   });
 
-  // Totals row — 3 left columns (Name, Roll, Mobile) then days
   h += `<tr class="totals-row"><td class="name-col">${totalLabel}</td><td>-</td><td>-</td>`;
   for (let d=1; d<=days; d++){
     const k = y+'-'+m+'-'+d;
@@ -2168,7 +2265,7 @@ function markToday(type){
 }
 
 /* ============================================================
-   EXPORT EXCEL — FIXED: Name/Roll/Mobile forced to left
+   EXPORT EXCEL — Name/Roll/Mobile forced to left
    ============================================================ */
 function exportMonthly(){
   const mk = document.getElementById('monthSelect').value;
@@ -2183,12 +2280,10 @@ function exportMonthly(){
   const totalPKey = L==='bn' ? 'মোট P' : 'Total P';
   const totalAKey = L==='bn' ? 'মোট A' : 'Total A';
 
-  // Build the header order explicitly — Name, Roll, Mobile first, then days, then totals
   const header = [nameKey, rollKey, mobileKey];
-  for (let d=1; d<=days; d++) header.push(String(d)); // use plain numbers for day columns (cleaner)
+  for (let d=1; d<=days; d++) header.push(String(d));
   header.push(totalPKey, totalAKey);
 
-  // Build rows
   const rows = students.map((s,i)=>{
     const row = {};
     row[nameKey]   = s.name;
@@ -2206,17 +2301,15 @@ function exportMonthly(){
     return row;
   });
 
-  // Force header order via {header: [...]}
   const ws = XLSX.utils.json_to_sheet(rows, { header });
 
-  // Column widths — Name wide, Roll/Mobile medium, days narrow, totals small
   ws['!cols'] = [
-    { wch: 24 },  // Name
-    { wch: 10 },  // Roll
-    { wch: 14 },  // Mobile
-    ...Array(days).fill({ wch: 4 }),  // Day columns
-    { wch: 8 },   // Total P
-    { wch: 8 }    // Total A
+    { wch: 24 },
+    { wch: 10 },
+    { wch: 14 },
+    ...Array(days).fill({ wch: 4 }),
+    { wch: 8 },
+    { wch: 8 }
   ];
 
   const wb = XLSX.utils.book_new();
