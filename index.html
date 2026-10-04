@@ -1355,6 +1355,9 @@ let trendChart = null;
 let fbReady = false;
 let unsubListener = null;
 let pushTimer = null;
+let pendingSave = false;
+let suppressSnapshot = 0;
+let lastLocalEdit = 0;
 const DEFAULT_PASS = 'admin123';
 
 /* ============================================================
@@ -1364,6 +1367,7 @@ let history = [];
 const HISTORY_MAX = 50;
 
 function pushHistory(type, a, b, c){
+  lastLocalEdit = Date.now();
   if (type === 'cell') history.push({ type:'cell', k:a, i:b, prev:c, t:Date.now() });
   else if (type === 'bulk') history.push({ type:'bulk', k:a, prev:b, t:Date.now() });
   else if (type === 'students') history.push({ type:'students', prev:a, t:Date.now() });
@@ -1404,6 +1408,10 @@ async function undoLast(){
       attendance = JSON.parse(JSON.stringify(last.prevOrder.attendance));
       results = JSON.parse(JSON.stringify(last.prevOrder.results));
     }
+    // force immediate save and suppress snapshots
+    lastLocalEdit = Date.now();
+    suppressSnapshot = Date.now() + 1500;
+    if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
     await saveToCloud();
     const active = document.querySelector('.view.active')?.id;
     if (active === 'view-monthly') renderMonthly();
@@ -1469,16 +1477,24 @@ async function loadFromCloud(){
 
 async function saveToCloud(){
   if (!currentClass || !fbReady) return;
+  pendingSave = true;
+  suppressSnapshot = Date.now() + 1500;
   try {
     await window.fbFns.setDoc(cloudRef(), {
       students, attendance, results, notices, subNames, whatsapp,
       updatedAt: window.fbFns.serverTimestamp()
     }, { merge: true });
-  } catch(err){ console.error(err); toast('☁️ Save failed','error'); }
+  } catch(err){
+    console.error(err);
+    toast('☁️ Save failed','error');
+  } finally {
+    setTimeout(()=>{ pendingSave = false; }, 800);
+  }
 }
 
 function saveAll(){
   if (pushTimer) clearTimeout(pushTimer);
+  suppressSnapshot = Date.now() + 1500;
   pushTimer = setTimeout(saveToCloud, 300);
 }
 
@@ -1486,7 +1502,22 @@ function startLiveSync(){
   if (unsubListener) unsubListener();
   unsubListener = window.fbFns.onSnapshot(cloudRef(), (snap)=>{
     if (!snap.exists()) return;
+
+    // Skip snapshot if a local change is in flight or within suppression window
+    if (pendingSave || Date.now() < suppressSnapshot) {
+      console.log('⏭️ Snapshot ignored (local change pending)');
+      return;
+    }
+
     const d = snap.data();
+
+    // Ignore stale snapshots (older than our last edit)
+    const incoming = d.updatedAt && d.updatedAt.toMillis ? d.updatedAt.toMillis() : 0;
+    if (incoming && incoming < lastLocalEdit) {
+      console.log('⏭️ Stale snapshot ignored');
+      return;
+    }
+
     students = d.students || [];
     attendance = d.attendance || {};
     results = d.results || {};
@@ -2263,11 +2294,11 @@ function markToday(type){
    CLEAR ATTENDANCE — FULL DAY & SINGLE CELL
    ============================================================ */
 
-// Clear ALL students for ONE specific day
 function clearDay(dateKey){
   if (!attendance[dateKey]) {
     return toast(getCurrentLang()==='bn' ? 'এই দিনে কিছু নেই' : 'Nothing to clear', 'info');
   }
+  suppressSnapshot = Date.now() + 1500;
   const snapshot = JSON.parse(JSON.stringify(attendance[dateKey]));
   pushHistory('bulk', dateKey, snapshot);
   delete attendance[dateKey];
@@ -2278,7 +2309,6 @@ function clearDay(dateKey){
   toast(getCurrentLang()==='bn' ? '🧹 দিন পরিষ্কার হয়েছে' : '🧹 Day cleared', 'success');
 }
 
-// Prompt user: clear a specific day
 function clearAllDaysPrompt(){
   const L = getCurrentLang();
   const today = new Date();
@@ -2315,11 +2345,11 @@ function confirmClearDay(){
   clearDay(key);
 }
 
-// Clear ONE student's cell
 function clearCell(dateKey, idx){
   if (!attendance[dateKey] || !(idx in attendance[dateKey])) {
     return toast(getCurrentLang()==='bn' ? 'খালি সেল' : 'Cell already empty', 'info');
   }
+  suppressSnapshot = Date.now() + 1500;
   const prev = attendance[dateKey][idx];
   pushHistory('cell', dateKey, idx, prev);
   delete attendance[dateKey][idx];
@@ -2369,7 +2399,7 @@ document.addEventListener('touchmove', ()=>{
 }, {passive:true});
 
 /* ============================================================
-   EXPORT EXCEL — Name/Roll/Mobile forced to left
+   EXPORT EXCEL
    ============================================================ */
 function exportMonthly(){
   const mk = document.getElementById('monthSelect').value;
@@ -2423,7 +2453,7 @@ function exportMonthly(){
 }
 
 /* ============================================================
-   WHATSAPP SHARE (with mobile)
+   WHATSAPP SHARE
    ============================================================ */
 function shareMonthlyWhatsApp(){
   const mk = document.getElementById('monthSelect').value;
