@@ -1354,6 +1354,14 @@ let pushTimer = null;
 const DEFAULT_PASS = 'admin123';
 
 /* ============================================================
+   CLASS NAME MIGRATION (old names → new names)
+   ============================================================ */
+const CLASS_MIGRATION = {
+  '১১শ শ্রেণি': 'একাদশ শ্রেণি',
+  '১২শ শ্রেণি': 'দ্বাদশ শ্রেণি'
+};
+
+/* ============================================================
    UNDO SYSTEM
    ============================================================ */
 let history = [];
@@ -1443,8 +1451,43 @@ async function checkCloud(){
 
 function cloudRef(){ return window.fbFns.doc(window.db, 'classes', currentClass); }
 
+/* Returns the list of possible old (legacy) names for a given class */
+function getLegacyNames(cls){
+  const list = [];
+  for (const [oldName, newName] of Object.entries(CLASS_MIGRATION)){
+    if (newName === cls) list.push(oldName);
+  }
+  return list;
+}
+
+/* Returns the list of possible new names if this is an old class */
+function getNewName(cls){
+  return CLASS_MIGRATION[cls] || null;
+}
+
 async function loadFromCloud(){
-  const snap = await window.fbFns.getDoc(cloudRef());
+  // 1) Try the current class name first
+  let snap = await window.fbFns.getDoc(cloudRef());
+
+  // 2) If not found, try legacy names and migrate data on the fly
+  if (!snap.exists()){
+    const legacyNames = getLegacyNames(currentClass);
+    for (const legacy of legacyNames){
+      const legacySnap = await window.fbFns.getDoc(window.fbFns.doc(window.db,'classes', legacy));
+      if (legacySnap.exists()){
+        // Copy the legacy data into the new document
+        const legacyData = legacySnap.data();
+        await window.fbFns.setDoc(cloudRef(), legacyData, { merge: true });
+        snap = await window.fbFns.getDoc(cloudRef());
+        toast(getCurrentLang()==='bn'
+          ? `📦 "${legacy}" এর ডেটা "${currentClass}" এ স্থানান্তর হয়েছে`
+          : `📦 Migrated data from "${legacy}" to "${currentClass}"`, 'success');
+        break;
+      }
+    }
+  }
+
+  // 3) If still not found, create a fresh doc
   if (snap.exists()){
     const d = snap.data();
     students = d.students || [];
