@@ -1399,4 +1399,1104 @@ async function undoLast(){
       // last.prevOrder is { students: [...], attendance: {...}, results: {...} }
       students = JSON.parse(JSON.stringify(last.prevOrder.students));
       attendance = JSON.parse(JSON.stringify(last.prevOrder.attendance));
-      results
+      results = JSON.parse(JSON.stringify(last.prevOrder.results));
+    }
+    await saveToCloud();
+    const active = document.querySelector('.view.active')?.id;
+    if (active === 'view-monthly') renderMonthly();
+    if (active === 'view-students') renderStudents();
+    if (active === 'view-dashboard') renderDashboard();
+    if (active === 'view-notice') renderNotices();
+    if (active === 'view-leaderboard') renderLeaderboard();
+    if (active === 'view-heatmap') renderHeatmap();
+    updateUndoButton();
+    toast(getCurrentLang()==='bn'?'↶ ফিরিয়ে আনা হয়েছে':'↶ Undone','success');
+  } catch(err){ console.error(err); toast('Error','error'); }
+}
+
+document.addEventListener('keydown', (e)=>{
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z'){ e.preventDefault(); undoLast(); }
+  if (e.key === 'Escape'){
+    const panel = document.getElementById('a11yPanel');
+    if (panel && panel.classList.contains('open')) toggleA11y();
+  }
+});
+
+/* ============================================================
+   FIREBASE
+   ============================================================ */
+window.addEventListener('firebase-ready', ()=>{ fbReady = true; checkCloud(); });
+
+async function checkCloud(){
+  const dot = document.getElementById('syncDot');
+  const text = document.getElementById('syncText');
+  try {
+    await window.fbFns.setDoc(window.fbFns.doc(window.db,'system','ping'), {lastCheck: Date.now()});
+    dot.className = 'sync-dot online';
+    text.textContent = t('connected');
+  } catch(err){
+    dot.className = 'sync-dot offline';
+    text.textContent = t('connect_fail');
+    console.error(err);
+  }
+}
+
+function cloudRef(){ return window.fbFns.doc(window.db, 'classes', currentClass); }
+
+async function loadFromCloud(){
+  const snap = await window.fbFns.getDoc(cloudRef());
+  if (snap.exists()){
+    const d = snap.data();
+    students = d.students || [];
+    attendance = d.attendance || {};
+    results = d.results || {};
+    notices = d.notices || [];
+    subNames = d.subNames || subNames;
+    whatsapp = d.whatsapp || { link:'', name:'' };
+    if (d.password) localStorage.setItem('cached_pass_'+currentClass, d.password);
+  } else {
+    await window.fbFns.setDoc(cloudRef(), {
+      students: [], attendance: {}, results: {}, notices: [],
+      subNames, whatsapp: {link:'',name:''}, password: DEFAULT_PASS,
+      createdAt: window.fbFns.serverTimestamp()
+    });
+    students=[]; attendance={}; results={}; notices=[]; whatsapp={link:'',name:''};
+  }
+}
+
+async function saveToCloud(){
+  if (!currentClass || !fbReady) return;
+  try {
+    await window.fbFns.setDoc(cloudRef(), {
+      students, attendance, results, notices, subNames, whatsapp,
+      updatedAt: window.fbFns.serverTimestamp()
+    }, { merge: true });
+  } catch(err){ console.error(err); toast('☁️ Save failed','error'); }
+}
+
+function saveAll(){
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(saveToCloud, 300);
+}
+
+function startLiveSync(){
+  if (unsubListener) unsubListener();
+  unsubListener = window.fbFns.onSnapshot(cloudRef(), (snap)=>{
+    if (!snap.exists()) return;
+    const d = snap.data();
+    students = d.students || [];
+    attendance = d.attendance || {};
+    results = d.results || {};
+    notices = d.notices || [];
+    subNames = d.subNames || subNames;
+    whatsapp = d.whatsapp || {link:'',name:''};
+    const active = document.querySelector('.view.active')?.id;
+    if (active === 'view-dashboard') renderDashboard();
+    if (active === 'view-students') renderStudents();
+    if (active === 'view-monthly') renderMonthly();
+    if (active === 'view-notice') renderNotices();
+    if (active === 'view-settings') renderSettings();
+    if (active === 'view-leaderboard') renderLeaderboard();
+    if (active === 'view-heatmap') renderHeatmap();
+    renderWhatsAppBanner();
+  });
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function todayKey(d=new Date()){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function bn(n){
+  if (getCurrentLang() === 'en') return String(n);
+  return String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
+}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg,type='success'){
+  const t=document.createElement('div');
+  t.className='toast '+type; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2800);
+}
+function openModal(html){ document.getElementById('modalRoot').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',cur);
+  localStorage.setItem('theme',cur);
+}
+document.documentElement.setAttribute('data-theme', localStorage.getItem('theme')||'light');
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+async function doLogin(){
+  if (!fbReady) return toast('☁️ Connecting...','info');
+  const cls = document.getElementById('loginClass').value;
+  const pw = document.getElementById('loginPass').value;
+  if (!cls) return toast(getCurrentLang()==='bn'?'শ্রেণি সিলেক্ট করুন':'Select a class','error');
+  currentClass = cls;
+  toast('☁️ Loading...','info');
+  try {
+    await loadFromCloud();
+    const storedPass = localStorage.getItem('cached_pass_'+currentClass) || DEFAULT_PASS;
+    if (pw !== storedPass) { currentClass=''; return toast(getCurrentLang()==='bn'?'ভুল পাসওয়ার্ড!':'Wrong password!','error'); }
+    localStorage.setItem('session', cls);
+    document.getElementById('loginWrap').classList.add('hidden');
+    document.getElementById('app').classList.add('active');
+    document.getElementById('topClass').textContent = cls;
+    document.getElementById('liveBadge').classList.remove('hidden');
+    startLiveSync();
+    switchTab('dashboard');
+    toast(getCurrentLang()==='bn'?'✅ লগইন সফল':'✅ Login successful','success');
+  } catch(err){
+    currentClass='';
+    console.error(err);
+    toast(getCurrentLang()==='bn'?'❌ সংযোগ ব্যর্থ':'❌ Connection failed','error');
+  }
+}
+
+function logout(){
+  if (!confirm(getCurrentLang()==='bn'?'লগআউট?':'Logout?')) return;
+  if (unsubListener) unsubListener();
+  localStorage.removeItem('session');
+  location.reload();
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
+  if (name==='dashboard') renderDashboard();
+  if (name==='students')  renderStudents();
+  if (name==='monthly')   initMonthly();
+  if (name==='leaderboard') renderLeaderboard();
+  if (name==='heatmap')   renderHeatmap();
+  if (name==='results')   renderResults();
+  if (name==='notice')    renderNotices();
+  if (name==='settings')  renderSettings();
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function renderDashboard(){
+  const heroClassEl = document.getElementById('heroClass');
+  const heroDateEl = document.getElementById('heroDate');
+  if (heroClassEl) heroClassEl.textContent = currentClass;
+  if (heroDateEl) {
+    const d = new Date();
+    if (getCurrentLang() === 'bn'){
+      const months = ['জানু','ফেব','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্ট','অক্টো','নভে','ডিসে'];
+      heroDateEl.textContent = bn(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + bn(d.getFullYear());
+    } else {
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      heroDateEl.textContent = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
+  }
+
+  const total = students.length;
+  const today = attendance[todayKey()] || {};
+  let p=0, a=0;
+  students.forEach((_,i)=>{ if (today[i]==='A') a++; else p++; });
+  const rate = total ? Math.round(p/total*100) : 0;
+
+  animateNumber('stTotal', total);
+  animateNumber('stPresent', p);
+  animateNumber('stAbsent', a);
+
+  const ring = document.getElementById('rateRing');
+  if (ring){
+    const dasharray = 283;
+    const dashoffset = dasharray * (1 - rate/100);
+    setTimeout(()=>{ ring.style.strokeDashoffset = dashoffset; }, 100);
+  }
+  const rateLabel = document.getElementById('stRate');
+  if (rateLabel) rateLabel.textContent = bn(rate)+'%';
+
+  drawTrend();
+  renderWhatsAppBanner();
+}
+
+function animateNumber(id, target){
+  const el = document.getElementById(id);
+  if (!el) return;
+  const duration = 800;
+  const startTime = performance.now();
+  function tick(now){
+    const progress = Math.min((now - startTime) / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    el.textContent = bn(Math.round(target * easeOut));
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function drawTrend(){
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+  const days=[], vals=[];
+  for (let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = todayKey(d);
+    const rec = attendance[k] || {};
+    let p=0, tot=0;
+    students.forEach((_,idx)=>{ if(rec[idx]){ tot++; if(rec[idx]==='P') p++; } });
+    days.push(bn(d.getDate())+'/'+bn(d.getMonth()+1));
+    vals.push(tot?Math.round(p/tot*100):0);
+  }
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels:days, datasets:[{ data:vals, borderColor:'#f4b400', backgroundColor:'rgba(244,180,0,.15)', fill:true, tension:.35, borderWidth:3, pointRadius:5, pointBackgroundColor:'#0b3d2e' }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100, ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+/* ============================================================
+   WHATSAPP BANNER
+   ============================================================ */
+function renderWhatsAppBanner(){
+  const wrap = document.getElementById('waBannerWrap');
+  if (!wrap) return;
+  if (!whatsapp.link){ wrap.innerHTML = ''; return; }
+  const groupName = whatsapp.name || (currentClass + ' Group');
+  wrap.innerHTML = `
+    <div class="wa-banner">
+      <div class="wa-icon">💬</div>
+      <div class="wa-info">
+        <h3>${escapeHtml(groupName)}</h3>
+        <p>${getCurrentLang()==='bn'?'ট্যাপ করে WhatsApp গ্রুপ খুলুন':'Tap to open WhatsApp group'}</p>
+      </div>
+      <div class="wa-actions">
+        <button class="btn primary" onclick="openWhatsAppGroup()">${getCurrentLang()==='bn'?'গ্রুপ খুলুন':'Open Group'}</button>
+      </div>
+    </div>`;
+}
+function openWhatsAppGroup(){
+  if (!whatsapp.link) return toast(getCurrentLang()==='bn'?'গ্রুপ লিংক নেই':'No group link','error');
+  window.open(whatsapp.link, '_blank');
+}
+
+/* ============================================================
+   STUDENTS
+   ============================================================ */
+function setFilter(f){
+  filter = f;
+  document.querySelectorAll('#filterChips .chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));
+  renderStudents();
+}
+
+function getStudentStats(idx){
+  let p=0, a=0;
+  Object.keys(attendance).forEach(k=>{
+    const st = (attendance[k]||{})[idx];
+    if (st==='P') p++;
+    if (st==='A') a++;
+  });
+  const total = p+a;
+  const pct = total ? Math.round(p/total*100) : 0;
+  return { p, a, total, pct };
+}
+
+function getGrade(pct){
+  if (pct >= 90) return { label:'A+', cls:'grade-A' };
+  if (pct >= 80) return { label:'A',  cls:'grade-A' };
+  if (pct >= 70) return { label:'B',  cls:'grade-B' };
+  if (pct >= 60) return { label:'C',  cls:'grade-C' };
+  if (pct >= 50) return { label:'D',  cls:'grade-D' };
+  return { label:'F', cls:'grade-F' };
+}
+
+function renderStudents(){
+  const q = (document.getElementById('searchBox').value||'').toLowerCase().trim();
+  const list = document.getElementById('studentList');
+  const today = attendance[todayKey()] || {};
+  let present=0, absent=0;
+  students.forEach((_,i)=>{ if (today[i]==='A') absent++; else present++; });
+  document.getElementById('cAll').textContent = bn(students.length);
+  document.getElementById('cPresent').textContent = bn(present);
+  document.getElementById('cAbsent').textContent = bn(absent);
+
+  let filtered = students.map((s,i)=>({...s,_i:i}));
+  if (filter==='present') filtered = filtered.filter(s=>today[s._i]!=='A');
+  if (filter==='absent')  filtered = filtered.filter(s=>today[s._i]==='A');
+  if (q) filtered = filtered.filter(s=> (s.name||'').toLowerCase().includes(q) || (s.roll||'').toLowerCase().includes(q) || (s.mobile||'').toLowerCase().includes(q));
+
+  if (!filtered.length){
+    list.innerHTML = `<div class="empty"><div class="icon">👥</div><p>${getCurrentLang()==='bn'?'কোনো শিক্ষার্থী নেই':'No students'}</p></div>`;
+    return;
+  }
+
+  // Show reorder buttons only in "All" view with no search (because reordering a filtered list is confusing)
+  const showReorder = (filter === 'all' && !q);
+
+  list.innerHTML = filtered.map(s=>{
+    const isAbsent = today[s._i]==='A';
+    const stats = getStudentStats(s._i);
+    const grade = getGrade(stats.pct);
+    const rollLabel = getCurrentLang()==='bn' ? 'রোল' : 'Roll';
+    const canUp = showReorder && s._i > 0;
+    const canDown = showReorder && s._i < students.length - 1;
+    const reorderHtml = showReorder ? `
+      <div class="reorder-group">
+        <button class="reorder-btn" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveStudent(${s._i},-1)" title="Move Up">▲</button>
+        <button class="reorder-btn" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveStudent(${s._i},1)" title="Move Down">▼</button>
+      </div>` : '';
+    return `<div class="student-row ${isAbsent?'absent':'present'} student-card">
+      ${reorderHtml}
+      <div class="avatar ${isAbsent?'absent':''}" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">${escapeHtml((s.name||'?').charAt(0))}</div>
+      <div class="student-info" onclick="openStudentAnalytics(${s._i})" style="cursor:pointer">
+        <div class="name">${escapeHtml(s.name)}
+          <span class="grade-badge ${grade.cls}">${grade.label} • ${bn(stats.pct)}%</span>
+        </div>
+        <div class="meta">${rollLabel}: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</div>
+      </div>
+      <div class="row-actions">
+        <button class="btn btn-purple btn-sm" onclick="event.stopPropagation();openReportCard(${s._i})" title="Report Card">🖨️</button>
+        <button class="btn btn-info btn-sm" onclick="event.stopPropagation();editStudent(${s._i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteStudent(${s._i})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   REORDER STUDENTS (Move Up / Down)
+   ============================================================ */
+function moveStudent(idx, dir){
+  // dir = -1 for up, +1 for down
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= students.length) return;
+
+  // Snapshot full state for undo
+  const snapshot = {
+    students: JSON.parse(JSON.stringify(students)),
+    attendance: JSON.parse(JSON.stringify(attendance)),
+    results: JSON.parse(JSON.stringify(results))
+  };
+
+  // Helper: swap keys in an object map (attendance[day] = { idx: 'P'/'A' })
+  function swapIndexKeys(obj, i1, i2){
+    Object.keys(obj).forEach(day=>{
+      const rec = obj[day];
+      if (!rec) return;
+      const hasA = Object.prototype.hasOwnProperty.call(rec, i1);
+      const hasB = Object.prototype.hasOwnProperty.call(rec, i2);
+      const vA = rec[i1];
+      const vB = rec[i2];
+      if (hasA && hasB){ rec[i1] = vB; rec[i2] = vA; }
+      else if (hasA && !hasB){ rec[i2] = vA; delete rec[i1]; }
+      else if (!hasA && hasB){ rec[i1] = vB; delete rec[i2]; }
+    });
+  }
+
+  // Swap the two student entries
+  const tmp = students[idx];
+  students[idx] = students[newIdx];
+  students[newIdx] = tmp;
+
+  // Swap their attendance and result keys so history stays attached to the student
+  swapIndexKeys(attendance, String(idx), String(newIdx));
+  swapIndexKeys(results, String(idx), String(newIdx));
+
+  pushHistory('reorder', snapshot);
+  saveAll();
+
+  // Re-render everything that depends on student order
+  renderStudents();
+  renderDashboard();
+  // If the attendance tab is visible with the same order, refresh it too
+  const active = document.querySelector('.view.active')?.id;
+  if (active === 'view-monthly') renderMonthly();
+  if (active === 'view-leaderboard') renderLeaderboard();
+  if (active === 'view-heatmap') renderHeatmap();
+  if (active === 'view-results') renderResults();
+
+  toast(getCurrentLang()==='bn'?'✅ ক্রম পরিবর্তন হয়েছে':'✅ Order updated','success');
+}
+
+/* ============================================================
+   STUDENT ANALYTICS
+   ============================================================ */
+function openStudentAnalytics(idx){
+  const s = students[idx];
+  if (!s) return;
+  const stats = getStudentStats(idx);
+  const grade = getGrade(stats.pct);
+  const L = getCurrentLang();
+
+  const monthsMap = {};
+  Object.keys(attendance).forEach(k=>{
+    const [y,m] = k.split('-');
+    const mk = y+'-'+String(m).padStart(2,'0');
+    if (!monthsMap[mk]) monthsMap[mk] = { p:0, a:0 };
+    const st = (attendance[k]||{})[idx];
+    if (st==='P') monthsMap[mk].p++;
+    if (st==='A') monthsMap[mk].a++;
+  });
+
+  let monthlyHtml = '';
+  Object.keys(monthsMap).sort().reverse().slice(0,6).forEach(mk=>{
+    const [y,m] = mk.split('-');
+    const label = new Date(y, m-1, 1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+    const { p, a } = monthsMap[mk];
+    const tot = p+a;
+    const pct = tot?Math.round(p/tot*100):0;
+    monthlyHtml += `<div class="analytics-cell"><div class="lbl">${label}</div><div class="num">${bn(pct)}%</div><div style="font-size:11px;color:var(--muted)">${bn(p)}✓ ${bn(a)}✗</div></div>`;
+  });
+
+  const labels = L==='bn' ? {
+    present: 'উপস্থিত', absent: 'অনুপস্থিত', total: 'মোট দিন', rate: 'উপস্থিতির হার',
+    grade: 'গ্রেড', recent: 'সাম্প্রতিক মাস', close: 'বন্ধ', report: '🖨️ রিপোর্ট কার্ড', roll: 'রোল'
+  } : {
+    present: 'Present', absent: 'Absent', total: 'Total Days', rate: 'Attendance Rate',
+    grade: 'Grade', recent: 'Recent Months', close: 'Close', report: '🖨️ Report Card', roll: 'Roll'
+  };
+
+  openModal(`
+    <div class="analytics-header">
+      <div class="analytics-avatar">${escapeHtml((s.name||'?').charAt(0))}</div>
+      <div class="analytics-info">
+        <h3>${escapeHtml(s.name)}</h3>
+        <p>${labels.roll}: ${escapeHtml(s.roll||'-')} • 📱 ${escapeHtml(s.mobile||'-')}</p>
+        <p style="margin-top:4px"><span class="grade-badge ${grade.cls}">${labels.grade}: ${grade.label}</span></p>
+      </div>
+    </div>
+    <div class="analytics-grid">
+      <div class="analytics-cell"><div class="lbl">${labels.present}</div><div class="num" style="color:var(--success)">${bn(stats.p)}</div></div>
+      <div class="analytics-cell"><div class="lbl">${labels.absent}</div><div class="num" style="color:var(--danger)">${bn(stats.a)}</div></div>
+      <div class="analytics-cell"><div class="lbl">${labels.total}</div><div class="num">${bn(stats.total)}</div></div>
+      <div class="analytics-cell"><div class="lbl">${labels.rate}</div><div class="num" style="color:var(--accent)">${bn(stats.pct)}%</div></div>
+    </div>
+    ${monthlyHtml ? `<h3 style="font-size:14px;margin-top:18px;margin-bottom:8px;color:var(--muted)">${labels.recent}</h3><div class="analytics-grid">${monthlyHtml}</div>` : ''}
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">${labels.close}</button>
+      <button class="btn btn-purple" onclick="closeModal();openReportCard(${idx})">${labels.report}</button>
+    </div>
+  `);
+}
+
+/* ============================================================
+   LEADERBOARD
+   ============================================================ */
+function renderLeaderboard(){
+  const sel = document.getElementById('monthSelect');
+  const mk = sel?.value;
+  const labelEl = document.getElementById('leaderMonth');
+  const L = getCurrentLang();
+  if (!mk){
+    labelEl.textContent = L==='bn'?'এই মাস':'This month';
+  } else {
+    const [y,m] = mk.split('-').map(Number);
+    labelEl.textContent = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+  }
+
+  if (!students.length){
+    document.getElementById('topList').innerHTML = `<div class="empty" style="padding:20px"><p>${L==='bn'?'ডেটা নেই':'No data'}</p></div>`;
+    document.getElementById('bottomList').innerHTML = '';
+    return;
+  }
+
+  const stats = students.map((s,i)=>{
+    let p=0, a=0;
+    Object.keys(attendance).forEach(k=>{
+      if (mk){
+        const [y,m] = k.split('-');
+        const curMk = y+'-'+String(m).padStart(2,'0');
+        if (curMk !== mk) return;
+      }
+      const st = (attendance[k]||{})[i];
+      if (st==='P') p++;
+      if (st==='A') a++;
+    });
+    const tot = p+a;
+    return { name:s.name, roll:s.roll, pct: tot?Math.round(p/tot*100):0, p, a };
+  }).sort((x,y)=>y.pct - x.pct);
+
+  const top = stats.slice(0,5);
+  const bottom = stats.slice(-5).reverse();
+
+  function row(item, rank, isTop){
+    const cls = isTop
+      ? (rank===1?'gold':rank===2?'silver':rank===3?'bronze':'')
+      : 'danger';
+    return `<div class="leader-item">
+      <div class="leader-rank ${cls}">${bn(rank)}</div>
+      <div class="leader-name">${escapeHtml(item.name)}</div>
+      <div class="leader-pct ${isTop?'':'low'}">${bn(item.pct)}%</div>
+    </div>`;
+  }
+
+  document.getElementById('topList').innerHTML = top.map((s,i)=>row(s,i+1,true)).join('');
+  document.getElementById('bottomList').innerHTML = bottom.map((s,i)=>row(s,i+1,false)).join('');
+}
+
+/* ============================================================
+   REPORT CARD
+   ============================================================ */
+function openReportCard(idx){
+  const s = students[idx];
+  if (!s) return;
+  const stats = getStudentStats(idx);
+  const grade = getGrade(stats.pct);
+  const L = getCurrentLang();
+  const monthLabel = new Date().toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+
+  const labels = L==='bn' ? {
+    name: 'নাম', roll: 'রোল', class: 'শ্রেণি', mobile: 'মোবাইল',
+    present: 'উপস্থিত', absent: 'অনুপস্থিত', total: 'মোট দিন', rate: 'হার', grade: 'গ্রেড',
+    date: 'তারিখ', sign: 'শিক্ষকের স্বাক্ষর',
+    title: 'উপস্থিতি রিপোর্ট কার্ড',
+    close: 'বন্ধ', print: '🖨️ প্রিন্ট / PDF'
+  } : {
+    name: 'Name', roll: 'Roll', class: 'Class', mobile: 'Mobile',
+    present: 'Present', absent: 'Absent', total: 'Total Days', rate: 'Rate', grade: 'Grade',
+    date: 'Date', sign: "Teacher's Signature",
+    title: 'Attendance Report Card',
+    close: 'Close', print: '🖨️ Print / PDF'
+  };
+
+  const html = `
+    <div id="reportCard" style="background:#fff;color:#0f172a;padding:20px;border-radius:14px">
+      <div style="text-align:center;border-bottom:3px double #0b3d2e;padding-bottom:12px;margin-bottom:14px">
+        <img src="https://i.imgur.com/kthmVIB.png" style="width:60px;height:60px;border-radius:50%;border:2px solid #f4b400" onerror="this.style.display='none'">
+        <h2 style="color:#0b3d2e;font-size:16px;margin-top:6px">Momtaj Uddin Business Management College</h2>
+        <p style="font-size:12px;color:#64748b">${labels.title} — ${monthLabel}</p>
+      </div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:14px">
+        <tr><td style="padding:5px;font-weight:600">${labels.name}</td><td style="padding:5px">${escapeHtml(s.name)}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">${labels.roll}</td><td style="padding:5px">${escapeHtml(s.roll||'-')}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">${labels.class}</td><td style="padding:5px">${escapeHtml(currentClass)}</td></tr>
+        <tr><td style="padding:5px;font-weight:600">${labels.mobile}</td><td style="padding:5px">${escapeHtml(s.mobile||'-')}</td></tr>
+      </table>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#0b3d2e;color:#fff">
+            <th style="padding:8px">${labels.present}</th>
+            <th style="padding:8px">${labels.absent}</th>
+            <th style="padding:8px">${labels.total}</th>
+            <th style="padding:8px">${labels.rate}</th>
+            <th style="padding:8px">${labels.grade}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="text-align:center">
+            <td style="padding:10px;font-weight:700;color:#16a34a">${bn(stats.p)}</td>
+            <td style="padding:10px;font-weight:700;color:#e63946">${bn(stats.a)}</td>
+            <td style="padding:10px;font-weight:700">${bn(stats.total)}</td>
+            <td style="padding:10px;font-weight:700;color:#f4b400">${bn(stats.pct)}%</td>
+            <td style="padding:10px;font-weight:700">${grade.label}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:24px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
+        <div>${labels.date}: ${bn(new Date().getDate())}/${bn(new Date().getMonth()+1)}/${bn(new Date().getFullYear())}</div>
+        <div>${labels.sign}: ________________</div>
+      </div>
+    </div>
+    <div class="modal-actions no-print">
+      <button class="btn btn-ghost" onclick="closeModal()">${labels.close}</button>
+      <button class="btn btn-primary" onclick="printReportCard()">${labels.print}</button>
+    </div>
+  `;
+  openModal(html);
+}
+function printReportCard(){
+  const node = document.getElementById('reportCard');
+  if (!node) return;
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>Report Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body{font-family:'Hind Siliguri',sans-serif;padding:20px;color:#0f172a}
+      table{width:100%;border-collapse:collapse}
+      th,td{padding:8px;text-align:center}
+      thead tr{background:#0b3d2e;color:#fff}
+      h2{color:#0b3d2e}
+    </style></head><body>${node.outerHTML}</body></html>
+  `);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 300);
+}
+
+/* ============================================================
+   HEATMAP
+   ============================================================ */
+function renderHeatmap(){
+  const sel = document.getElementById('monthSelect');
+  const mk = sel?.value;
+  const grid = document.getElementById('heatmapGrid');
+  const labelEl = document.getElementById('heatMonth');
+  const L = getCurrentLang();
+  if (!mk){
+    grid.innerHTML = '';
+    return;
+  }
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  labelEl.textContent = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+
+  if (!students.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><p>${L==='bn'?'শিক্ষার্থী যোগ করুন':'Add students'}</p></div>`;
+    return;
+  }
+
+  let html = '';
+  for (let d=1; d<=days; d++){
+    const k = y+'-'+m+'-'+d;
+    const rec = attendance[k] || {};
+    let p=0;
+    students.forEach((_,i)=>{ if (rec[i]==='P') p++; });
+    const pct = students.length ? p/students.length : 0;
+    let level = 0;
+    if (pct > 0.9) level = 5;
+    else if (pct > 0.75) level = 4;
+    else if (pct > 0.5) level = 3;
+    else if (pct > 0.25) level = 2;
+    else if (pct > 0) level = 1;
+    const isToday = y===new Date().getFullYear() && m===new Date().getMonth()+1 && d===new Date().getDate();
+    html += `<div class="heat-cell l${level} ${isToday?'today':''}" title="${bn(d)} — ${bn(p)}/${bn(students.length)} (${bn(Math.round(pct*100))}%)"></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+function fireConfetti(count=80){
+  const box = document.getElementById('confettiBox');
+  if (!box) return;
+  for (let i=0; i<count; i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + '%';
+    c.style.animationDelay = Math.random()*0.5 + 's';
+    c.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    c.style.width = (6 + Math.random()*8) + 'px';
+    c.style.height = (6 + Math.random()*8) + 'px';
+    box.appendChild(c);
+    setTimeout(()=>c.remove(), 4000);
+  }
+}
+
+/* ============================================================
+   STUDENT MODAL / CRUD
+   ============================================================ */
+function openAddStudent(){
+  const L = getCurrentLang();
+  openModal(`
+    <h3>${L==='bn'?'➕ নতুন শিক্ষার্থী':'➕ New Student'}</h3>
+    <label>${L==='bn'?'নাম *':'Name *'}</label><input id="mName" placeholder="${L==='bn'?'শিক্ষার্থীর নাম':'Student name'}">
+    <label>${L==='bn'?'রোল':'Roll'}</label><input id="mRoll" placeholder="${L==='bn'?'রোল নম্বর':'Roll number'}">
+    <label>${L==='bn'?'মোবাইল':'Mobile'}</label><input id="mMobile" placeholder="01XXXXXXXXX">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">${L==='bn'?'বাতিল':'Cancel'}</button>
+      <button class="btn btn-primary" onclick="saveNewStudent()">${L==='bn'?'✅ যোগ করুন':'✅ Add'}</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('mName').focus(),100);
+}
+function saveNewStudent(){
+  const L = getCurrentLang();
+  const name=document.getElementById('mName').value.trim();
+  const roll=document.getElementById('mRoll').value.trim();
+  const mobile=document.getElementById('mMobile').value.trim();
+  if(!name) return toast(L==='bn'?'নাম দিন':'Enter name','error');
+  if(roll && students.some(s=>s.roll===roll)) return toast(L==='bn'?'এই রোল আগেই আছে!':'Roll already exists!','error');
+  pushHistory('students', JSON.parse(JSON.stringify(students)));
+  students.push({name,roll,mobile});
+  saveAll(); closeModal(); renderStudents(); renderDashboard();
+  toast(L==='bn'?'✅ শিক্ষার্থী যোগ হয়েছে':'✅ Student added','success');
+}
+function editStudent(i){
+  const s=students[i];
+  const L = getCurrentLang();
+  openModal(`
+    <h3>${L==='bn'?'✏️ সম্পাদনা':'✏️ Edit'}</h3>
+    <label>${L==='bn'?'নাম':'Name'}</label><input id="mName" value="${escapeHtml(s.name)}">
+    <label>${L==='bn'?'রোল':'Roll'}</label><input id="mRoll" value="${escapeHtml(s.roll||'')}">
+    <label>${L==='bn'?'মোবাইল':'Mobile'}</label><input id="mMobile" value="${escapeHtml(s.mobile||'')}">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">${L==='bn'?'বাতিল':'Cancel'}</button>
+      <button class="btn btn-primary" onclick="updateStudent(${i})">${L==='bn'?'💾 সেভ':'💾 Save'}</button>
+    </div>`);
+}
+function updateStudent(i){
+  const L = getCurrentLang();
+  const name=document.getElementById('mName').value.trim();
+  const roll=document.getElementById('mRoll').value.trim();
+  const mobile=document.getElementById('mMobile').value.trim();
+  if(!name) return toast(L==='bn'?'নাম দিন':'Enter name','error');
+  if(roll && students.some((s,idx)=>idx!==i && s.roll===roll)) return toast(L==='bn'?'এই রোল আগেই আছে!':'Roll already exists!','error');
+  pushHistory('students', JSON.parse(JSON.stringify(students)));
+  students[i]={name,roll,mobile};
+  saveAll(); closeModal(); renderStudents(); renderDashboard();
+  toast(L==='bn'?'✅ আপডেট হয়েছে':'✅ Updated','success');
+}
+function deleteStudent(i){
+  const L = getCurrentLang();
+  if(!confirm(L==='bn'?'ডিলিট করবেন?':'Delete?')) return;
+  pushHistory('delete-student', i, JSON.parse(JSON.stringify(students[i])));
+  students.splice(i,1);
+  saveAll(); renderStudents(); renderDashboard();
+  toast(L==='bn'?'ডিলিট হয়েছে — Undo চাপুন':'Deleted — press Undo','info');
+}
+
+/* ============================================================
+   MONTHLY (HAZIRA) — with Mobile column
+   ============================================================ */
+function initMonthly(){
+  const sel = document.getElementById('monthSelect');
+  const opts = []; const now = new Date();
+  const L = getCurrentLang();
+  for (let i=0;i<12;i++){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const label = d.toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+    opts.push(`<option value="${k}">${label}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+  renderMonthly();
+}
+
+function renderMonthly(){
+  const mk = document.getElementById('monthSelect').value;
+  if (!mk) return;
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  const L = getCurrentLang();
+  document.getElementById('monthTitle').textContent = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+  if (!students.length){
+    document.getElementById('monthlyTable').innerHTML = `<div class="empty"><div class="icon">📅</div><p>${L==='bn'?'শিক্ষার্থী যোগ করুন':'Add students'}</p></div>`;
+    return;
+  }
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear()===y && today.getMonth()+1===m);
+
+  const nameLabel = L==='bn' ? 'নাম' : 'Name';
+  const rollLabel = L==='bn' ? 'রোল' : 'Roll';
+  const mobileLabel = L==='bn' ? '📱 মোবাইল' : '📱 Mobile';
+  const totalLabel = L==='bn' ? '📊 মোট' : '📊 Total';
+
+  let h = `<table><thead><tr>
+    <th style="position:sticky;left:0;z-index:3;background:var(--primary)">${nameLabel}</th>
+    <th>${rollLabel}</th>
+    <th>${mobileLabel}</th>`;
+  for (let d=1; d<=days; d++){
+    const isToday = isCurrentMonth && today.getDate()===d;
+    h += `<th class="${isToday?'today-col-h':''}">${bn(d)}</th>`;
+  }
+  h += '<th style="background:var(--success)">P</th><th style="background:var(--danger)">A</th><th style="background:var(--accent);color:#000">%</th></tr></thead><tbody>';
+
+  students.forEach((s,i)=>{
+    let p=0, a=0;
+    h += `<tr>
+      <td class="name-col">${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.roll||'-')}</td>
+      <td class="mobile-col">${escapeHtml(s.mobile||'-')}</td>`;
+    for (let d=1; d<=days; d++){
+      const k = y+'-'+m+'-'+d;
+      const st = (attendance[k]||{})[i] || '';
+      if (st==='P') p++; if (st==='A') a++;
+      const isToday = isCurrentMonth && today.getDate()===d;
+      const cls = st==='P' ? 'cell-P' : st==='A' ? 'cell-A' : 'cell-empty';
+      const sym = st==='P' ? '✓' : st==='A' ? '✗' : '-';
+      h += `<td class="${cls} ${isToday?'today-col':''}" onclick="toggleMonthCell('${k}',${i})">${sym}</td>`;
+    }
+    const total = p+a;
+    const pct = total?Math.round(p/total*100):0;
+    h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
+  });
+
+  h += `<tr class="totals-row"><td class="name-col">${totalLabel}</td><td>-</td><td>-</td>`;
+  for (let d=1; d<=days; d++){
+    const k = y+'-'+m+'-'+d;
+    const rec = attendance[k] || {};
+    let p=0;
+    students.forEach((_,i)=>{ if (rec[i]==='P') p++; });
+    h += `<td>${p?bn(p):'-'}</td>`;
+  }
+  h += '<td colspan="3">-</td></tr>';
+  h += '</tbody></table>';
+  document.getElementById('monthlyTable').innerHTML = h;
+}
+
+function toggleMonthCell(k,i){
+  if (!attendance[k]) attendance[k]={};
+  const cur = attendance[k][i];
+  pushHistory('cell', k, i, cur);
+  if (cur === 'P') attendance[k][i] = 'A';
+  else attendance[k][i] = 'P';
+
+  if (k === todayKey()) checkAllPresentConfetti();
+
+  saveAll();
+  renderMonthly();
+  renderDashboard();
+}
+
+function checkAllPresentConfetti(){
+  const today = attendance[todayKey()] || {};
+  if (!students.length) return;
+  let allPresent = true;
+  students.forEach((_,i)=>{ if (today[i]==='A') allPresent = false; });
+  if (allPresent){
+    fireConfetti(120);
+    toast(getCurrentLang()==='bn'?'🎉 সবাই আজ উপস্থিত!':'🎉 Everyone present today!','success');
+  }
+}
+
+function markToday(type){
+  const L = getCurrentLang();
+  const msg = type==='present'
+    ? (L==='bn'?'আজকের সব শিক্ষার্থীকে উপস্থিত চিহ্নিত করবেন?':'Mark all students present today?')
+    : (L==='bn'?'আজকের সব শিক্ষার্থীকে অনুপস্থিত চিহ্নিত করবেন?':'Mark all students absent today?');
+  if (!confirm(msg)) return;
+  const k = todayKey();
+  const snapshot = attendance[k] ? JSON.parse(JSON.stringify(attendance[k])) : null;
+  pushHistory('bulk', k, snapshot);
+  if (!attendance[k]) attendance[k]={};
+  students.forEach((_,i)=>{ attendance[k][i] = type==='present'?'P':'A'; });
+  if (type === 'present') fireConfetti(100);
+  saveAll(); renderMonthly(); renderDashboard();
+  toast(L==='bn'?'✅ সম্পন্ন — Undo চাপুন':'✅ Done — press Undo','success');
+}
+
+/* ============================================================
+   EXPORT EXCEL — Name/Roll/Mobile forced to left
+   ============================================================ */
+function exportMonthly(){
+  const mk = document.getElementById('monthSelect').value;
+  if (!mk) return toast('No month selected','error');
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  const L = getCurrentLang();
+
+  const nameKey   = L==='bn' ? 'নাম' : 'Name';
+  const rollKey   = L==='bn' ? 'রোল' : 'Roll';
+  const mobileKey = L==='bn' ? 'মোবাইল' : 'Mobile';
+  const totalPKey = L==='bn' ? 'মোট P' : 'Total P';
+  const totalAKey = L==='bn' ? 'মোট A' : 'Total A';
+
+  const header = [nameKey, rollKey, mobileKey];
+  for (let d=1; d<=days; d++) header.push(String(d));
+  header.push(totalPKey, totalAKey);
+
+  const rows = students.map((s,i)=>{
+    const row = {};
+    row[nameKey]   = s.name;
+    row[rollKey]   = s.roll || '';
+    row[mobileKey] = s.mobile || '';
+    let p=0, a=0;
+    for (let d=1; d<=days; d++){
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i] || '';
+      row[String(d)] = st === 'P' ? '✓' : st === 'A' ? '✗' : '';
+      if (st==='P') p++;
+      if (st==='A') a++;
+    }
+    row[totalPKey] = p;
+    row[totalAKey] = a;
+    return row;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows, { header });
+
+  ws['!cols'] = [
+    { wch: 24 },
+    { wch: 10 },
+    { wch: 14 },
+    ...Array(days).fill({ wch: 4 }),
+    { wch: 8 },
+    { wch: 8 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Monthly');
+  XLSX.writeFile(wb, `Hazira_${currentClass}_${mk}.xlsx`);
+  toast(L==='bn'?'✅ Excel ডাউনলোড':'✅ Excel downloaded','success');
+}
+
+/* ============================================================
+   WHATSAPP SHARE (with mobile)
+   ============================================================ */
+function shareMonthlyWhatsApp(){
+  const mk = document.getElementById('monthSelect').value;
+  const [y,m] = mk.split('-').map(Number);
+  const days = new Date(y,m,0).getDate();
+  const L = getCurrentLang();
+  const monthLabel = new Date(y,m-1,1).toLocaleString(L==='bn'?'bn-BD':'en-US',{month:'long',year:'numeric'});
+  let msg = `📊 *${L==='bn'?'হাজিরা রিপোর্ট':'Attendance Report'}*\n🏫 Momtaj Uddin Business Management College\n📚 ${currentClass} — ${monthLabel}\n\n`;
+  students.forEach((s,i)=>{
+    let p=0, a=0;
+    for (let d=1; d<=days; d++){
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
+      if (st==='P') p++; if (st==='A') a++;
+    }
+    const total = p+a;
+    const pct = total?Math.round(p/total*100):0;
+    const mobile = s.mobile ? ` 📱${s.mobile}` : '';
+    msg += `• ${s.name}${mobile}: ${p}✓ ${a}✗ (${pct}%)\n`;
+  });
+  if (whatsapp.link){
+    navigator.clipboard.writeText(msg).then(()=>{
+      toast(L==='bn'?'রিপোর্ট কপি হয়েছে':'Report copied','success');
+      window.open(whatsapp.link, '_blank');
+    }).catch(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); });
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+  }
+}
+
+function sendNoticeWhatsApp(){
+  const L = getCurrentLang();
+  const noticeText = document.getElementById('noticeInput').value.trim();
+  if (!noticeText) return toast(L==='bn'?'নোটিশ লিখুন':'Enter a notice','error');
+  const msg = `📢 *${currentClass}*\n\n${noticeText}\n\n— Momtaj Uddin Business Management College`;
+  if (whatsapp.link){
+    navigator.clipboard.writeText(msg).then(()=>{
+      toast(L==='bn'?'নোটিশ কপি হয়েছে':'Notice copied','success');
+      window.open(whatsapp.link, '_blank');
+    }).catch(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); });
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+  }
+}
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+function renderResults(){
+  const L = getCurrentLang();
+  if (!students.length){
+    document.getElementById('resultTable').innerHTML = `<div class="empty"><div class="icon">🏆</div><p>${L==='bn'?'শিক্ষার্থী নেই':'No students'}</p></div>`;
+    return;
+  }
+  const nameLabel = L==='bn'?'নাম':'Name';
+  const rollLabel = L==='bn'?'রোল':'Roll';
+  let h = `<table><thead><tr><th>${nameLabel}</th><th>${rollLabel}</th>`;
+  for (let i=0;i<13;i++) h += `<th><input value="${escapeHtml(subNames[i].startsWith('বিষয়')?'':subNames[i])}" placeholder="${bn(i+1)}" oninput="setSubName(${i},this.value)" style="width:80px;padding:4px;background:transparent;color:#fff;border:none;text-align:center;font-weight:600"></th>`;
+  h += `<th>${L==='bn'?'মোট':'Total'}</th><th>GPA</th></tr></thead><tbody>`;
+  students.forEach((s,i)=>{
+    const r = results[i]||{};
+    let total=0, count=0;
+    h += `<tr><td class="name-col">${escapeHtml(s.name)}</td><td>${escapeHtml(s.roll||'-')}</td>`;
+    for (let j=0;j<13;j++){
+      const v = r['s'+j]||'';
+      if (v!==''){ total+=Number(v); count++; }
+      h += `<td><input type="number" min="0" max="100" value="${v}" oninput="setMark(${i},${j},this.value)" style="width:55px;padding:5px;text-align:center"></td>`;
+    }
+    const gpa = count?Math.min(5,(total/count/20)).toFixed(2):'0.00';
+    h += `<td><b>${bn(total)}</b></td><td><b style="color:var(--success)">${bn(gpa)}</b></td></tr>`;
+  });
+  h += '</tbody></table>';
+  document.getElementById('resultTable').innerHTML = h;
+}
+function setSubName(i,v){ subNames[i]=v||('বিষয় '+(i+1)); saveAll(); }
+function setMark(i,j,v){ if(!results[i]) results[i]={}; results[i]['s'+j]=v; saveAll(); }
+
+/* ============================================================
+   NOTICE
+   ============================================================ */
+function addNotice(){
+  const L = getCurrentLang();
+  const noticeText = document.getElementById('noticeInput').value.trim();
+  if (!noticeText) return toast(L==='bn'?'নোটিশ লিখুন':'Enter a notice','error');
+  notices.unshift({text:noticeText,time:new Date().toLocaleString(L==='bn'?'bn-BD':'en-US')});
+  saveAll();
+  document.getElementById('noticeInput').value='';
+  renderNotices();
+  toast(L==='bn'?'✅ নোটিশ যোগ হয়েছে':'✅ Notice added','success');
+}
+function renderNotices(){
+  const l = document.getElementById('noticeList');
+  const L = getCurrentLang();
+  if (!notices.length){ l.innerHTML=`<div class="empty"><div class="icon">📢</div><p>${L==='bn'?'কোনো নোটিশ নেই':'No notices'}</p></div>`; return; }
+  l.innerHTML = notices.map((n,i)=>`
+    <div class="notice-item">
+      <div class="text">${escapeHtml(n.text)}<div class="time">${escapeHtml(n.time)}</div></div>
+      <button class="del" onclick="deleteNotice(${i})">🗑️</button>
+    </div>`).join('');
+}
+function deleteNotice(i){
+  pushHistory('delete-notice', i, JSON.parse(JSON.stringify(notices[i])));
+  notices.splice(i,1);
+  saveAll(); renderNotices();
+  toast(getCurrentLang()==='bn'?'ডিলিট — Undo চাপুন':'Deleted — press Undo','info');
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function renderSettings(){
+  const label = document.getElementById('waClassLabel');
+  if (label) label.textContent = currentClass;
+  const linkEl = document.getElementById('waGroupLink');
+  const nameEl = document.getElementById('waGroupName');
+  if (linkEl) linkEl.value = whatsapp.link || '';
+  if (nameEl) nameEl.value = whatsapp.name || '';
+}
+function saveWhatsAppSettings(){
+  const L = getCurrentLang();
+  const link = document.getElementById('waGroupLink').value.trim();
+  const name = document.getElementById('waGroupName').value.trim();
+  if (link && !link.startsWith('https://chat.whatsapp.com/') && !link.startsWith('https://wa.me/')) {
+    if (!confirm(L==='bn'?'এই লিংকটি WhatsApp এর মতো দেখাচ্ছে না। তবুও সেভ করবেন?':'This doesn\'t look like a WhatsApp link. Save anyway?')) return;
+  }
+  whatsapp = { link, name };
+  saveAll();
+  toast(L==='bn'?'✅ সেভ হয়েছে':'✅ Saved','success');
+  renderWhatsAppBanner();
+}
+function testWhatsAppLink(){
+  const link = document.getElementById('waGroupLink').value.trim();
+  if (!link) return toast(getCurrentLang()==='bn'?'আগে লিংক দিন':'Enter link first','error');
+  window.open(link, '_blank');
+}
+function clearWhatsAppSettings(){
+  const L = getCurrentLang();
+  if (!confirm(L==='bn'?'WhatsApp লিংক মুছবেন?':'Remove WhatsApp link?')) return;
+  whatsapp = { link:'', name:'' };
+  saveAll();
+  renderSettings();
+  renderWhatsAppBanner();
+  toast(L==='bn'?'মুছে ফেলা হয়েছে':'Removed','info');
+}
+function changePassword(){
+  const L = getCurrentLang();
+  const np = document.getElementById('newPass').value.trim();
+  if (np.length < 4) return toast(L==='bn'?'কমপক্ষে ৪ অক্ষর':'At least 4 characters','error');
+  localStorage.setItem('cached_pass_'+currentClass, np);
+  window.fbFns.setDoc(cloudRef(), { password: np }, { merge: true })
+    .then(()=>{ toast(L==='bn'?'✅ পাসওয়ার্ড পরিবর্তন':'✅ Password changed','success'); document.getElementById('newPass').value=''; })
+    .catch(e=>{ console.error(e); toast('❌ Failed','error'); });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+applyA11yPrefs();
+applyTranslations();
+updateLangPills();
+
+window.addEventListener('load', async ()=>{
+  applyTranslations();
+  updateLangPills();
+  const s = localStorage.getItem('session');
+  if (s && fbReady){
+    currentClass = s;
+    try {
+      await loadFromCloud();
+      document.getElementById('loginWrap').classList.add('hidden');
+      document.getElementById('app').classList.add('active');
+      document.getElementById('topClass').textContent = s;
+      document.getElementById('liveBadge').classList.remove('hidden');
+      startLiveSync();
+      switchTab('dashboard');
+    } catch(e){ console.error(e); }
+  }
+});
+</script>
+</body>
+</html>
