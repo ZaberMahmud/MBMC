@@ -813,12 +813,14 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
           <button class="btn btn-info btn-sm" onclick="exportMonthly()" data-i18n="excel">📥 Excel</button>
           <button class="btn btn-wa btn-sm" onclick="shareMonthlyWhatsApp()" data-i18n="send_report">💬 Send Report</button>
           <button class="btn btn-ghost btn-sm" onclick="undoLast()" id="undoBtn" title="Ctrl+Z" disabled>↶ Undo</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearAllDaysPrompt()" title="Clear all marked cells of a day">🧹 Clear Day</button>
         </div>
         <div class="legend">
           <span><b style="color:var(--success)">✓</b> <span data-i18n="present">Present</span></span>
           <span><b style="color:var(--danger)">✗</b> <span data-i18n="absent">Absent</span></span>
           <span><b style="color:var(--muted)">-</b> <span data-i18n="unmarked">Unmarked</span></span>
           <span data-i18n="click_hint">💡 Click cell to toggle (Ctrl+Z = Undo)</span>
+          <span>🖱️ <span data-i18n="right_click_hint">Right-click cell = clear</span></span>
         </div>
         <div class="table-wrap" id="monthlyTable" style="margin-top:10px"></div>
       </div>
@@ -981,6 +983,7 @@ const TRANSLATIONS = {
     send_report: '💬 রিপোর্ট পাঠান',
     unmarked: 'চিহ্নিত হয়নি',
     click_hint: '💡 সেলে ক্লিক → ✓⇄✗ (Ctrl+Z = Undo)',
+    right_click_hint: 'ডান-ক্লিক = সেল খালি',
     top_students: '🏅 সেরা শিক্ষার্থী',
     leaderboard_desc: 'এই মাসের হাজিরা শতাংশের ভিত্তিতে।',
     best_attendance: '🥇 সর্বোচ্চ উপস্থিতি',
@@ -1074,6 +1077,7 @@ const TRANSLATIONS = {
     send_report: '💬 Send Report',
     unmarked: 'Unmarked',
     click_hint: '💡 Click cell to toggle (Ctrl+Z = Undo)',
+    right_click_hint: 'Right-click = clear cell',
     top_students: '🏅 Top Students',
     leaderboard_desc: "Based on this month's attendance percentage.",
     best_attendance: '🥇 Best Attendance',
@@ -1396,7 +1400,6 @@ async function undoLast(){
     } else if (last.type === 'delete-notice'){
       notices.splice(last.index, 0, last.notice);
     } else if (last.type === 'reorder'){
-      // last.prevOrder is { students: [...], attendance: {...}, results: {...} }
       students = JSON.parse(JSON.stringify(last.prevOrder.students));
       attendance = JSON.parse(JSON.stringify(last.prevOrder.attendance));
       results = JSON.parse(JSON.stringify(last.prevOrder.results));
@@ -1729,7 +1732,6 @@ function renderStudents(){
     return;
   }
 
-  // Show reorder buttons only in "All" view with no search (because reordering a filtered list is confusing)
   const showReorder = (filter === 'all' && !q);
 
   list.innerHTML = filtered.map(s=>{
@@ -1766,18 +1768,15 @@ function renderStudents(){
    REORDER STUDENTS (Move Up / Down)
    ============================================================ */
 function moveStudent(idx, dir){
-  // dir = -1 for up, +1 for down
   const newIdx = idx + dir;
   if (newIdx < 0 || newIdx >= students.length) return;
 
-  // Snapshot full state for undo
   const snapshot = {
     students: JSON.parse(JSON.stringify(students)),
     attendance: JSON.parse(JSON.stringify(attendance)),
     results: JSON.parse(JSON.stringify(results))
   };
 
-  // Helper: swap keys in an object map (attendance[day] = { idx: 'P'/'A' })
   function swapIndexKeys(obj, i1, i2){
     Object.keys(obj).forEach(day=>{
       const rec = obj[day];
@@ -1792,22 +1791,18 @@ function moveStudent(idx, dir){
     });
   }
 
-  // Swap the two student entries
   const tmp = students[idx];
   students[idx] = students[newIdx];
   students[newIdx] = tmp;
 
-  // Swap their attendance and result keys so history stays attached to the student
   swapIndexKeys(attendance, String(idx), String(newIdx));
   swapIndexKeys(results, String(idx), String(newIdx));
 
   pushHistory('reorder', snapshot);
   saveAll();
 
-  // Re-render everything that depends on student order
   renderStudents();
   renderDashboard();
-  // If the attendance tab is visible with the same order, refresh it too
   const active = document.querySelector('.view.active')?.id;
   if (active === 'view-monthly') renderMonthly();
   if (active === 'view-leaderboard') renderLeaderboard();
@@ -2263,6 +2258,115 @@ function markToday(type){
   saveAll(); renderMonthly(); renderDashboard();
   toast(L==='bn'?'✅ সম্পন্ন — Undo চাপুন':'✅ Done — press Undo','success');
 }
+
+/* ============================================================
+   CLEAR ATTENDANCE — FULL DAY & SINGLE CELL
+   ============================================================ */
+
+// Clear ALL students for ONE specific day
+function clearDay(dateKey){
+  if (!attendance[dateKey]) {
+    return toast(getCurrentLang()==='bn' ? 'এই দিনে কিছু নেই' : 'Nothing to clear', 'info');
+  }
+  const snapshot = JSON.parse(JSON.stringify(attendance[dateKey]));
+  pushHistory('bulk', dateKey, snapshot);
+  delete attendance[dateKey];
+
+  saveAll();
+  renderMonthly();
+  renderDashboard();
+  toast(getCurrentLang()==='bn' ? '🧹 দিন পরিষ্কার হয়েছে' : '🧹 Day cleared', 'success');
+}
+
+// Prompt user: clear a specific day
+function clearAllDaysPrompt(){
+  const L = getCurrentLang();
+  const today = new Date();
+  const todayK = todayKey();
+  const markedToday = attendance[todayK] ? Object.keys(attendance[todayK]).length : 0;
+
+  openModal(`
+    <h3>🧹 ${L==='bn' ? 'দিন পরিষ্কার করুন' : 'Clear a Day'}</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">
+      ${L==='bn'
+        ? 'নিচের তারিখের সব হাজিরা মুছে যাবে (Ctrl+Z দিয়ে ফেরানো যাবে)।'
+        : 'All attendance marks for the selected date will be removed (Ctrl+Z to undo).'}
+    </p>
+    <label>${L==='bn' ? 'তারিখ' : 'Date'}</label>
+    <input type="date" id="clearDate" value="${todayK}">
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">
+      ${L==='bn'
+        ? `আজ চিহ্নিত: <b>${bn(markedToday)}</b> জন`
+        : `Marked today: <b>${markedToday}</b> student(s)`}
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">${L==='bn'?'বাতিল':'Cancel'}</button>
+      <button class="btn btn-danger" onclick="confirmClearDay()">🧹 ${L==='bn'?'পরিষ্কার করুন':'Clear'}</button>
+    </div>
+  `);
+}
+
+function confirmClearDay(){
+  const inp = document.getElementById('clearDate');
+  if (!inp || !inp.value) return toast('No date','error');
+  const [y,m,d] = inp.value.split('-').map(Number);
+  const key = y+'-'+m+'-'+d;
+  closeModal();
+  clearDay(key);
+}
+
+// Clear ONE student's cell
+function clearCell(dateKey, idx){
+  if (!attendance[dateKey] || !(idx in attendance[dateKey])) {
+    return toast(getCurrentLang()==='bn' ? 'খালি সেল' : 'Cell already empty', 'info');
+  }
+  const prev = attendance[dateKey][idx];
+  pushHistory('cell', dateKey, idx, prev);
+  delete attendance[dateKey][idx];
+  if (Object.keys(attendance[dateKey]).length === 0) delete attendance[dateKey];
+
+  saveAll();
+  renderMonthly();
+  renderDashboard();
+  toast(getCurrentLang()==='bn' ? '🧽 সেল খালি হয়েছে' : '🧽 Cell cleared', 'success');
+}
+
+// Right-click on any cell
+document.addEventListener('contextmenu', (e)=>{
+  const cell = e.target.closest('#monthlyTable td');
+  if (!cell) return;
+  if (!cell.classList.contains('cell-P') &&
+      !cell.classList.contains('cell-A') &&
+      !cell.classList.contains('cell-empty')) return;
+
+  e.preventDefault();
+  const onclickAttr = cell.getAttribute('onclick') || '';
+  const match = onclickAttr.match(/toggleMonthCell\('([^']+)',\s*(\d+)\)/);
+  if (!match) return;
+  clearCell(match[1], Number(match[2]));
+});
+
+// Long-press for mobile (600 ms)
+let longPressTimer = null;
+document.addEventListener('touchstart', (e)=>{
+  const cell = e.target.closest('#monthlyTable td');
+  if (!cell) return;
+  const onclickAttr = cell.getAttribute('onclick') || '';
+  const match = onclickAttr.match(/toggleMonthCell\('([^']+)',\s*(\d+)\)/);
+  if (!match) return;
+  longPressTimer = setTimeout(()=>{
+    clearCell(match[1], Number(match[2]));
+    if (navigator.vibrate) navigator.vibrate(40);
+    longPressTimer = null;
+  }, 600);
+}, {passive:true});
+
+document.addEventListener('touchend', ()=>{
+  if (longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+});
+document.addEventListener('touchmove', ()=>{
+  if (longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+}, {passive:true});
 
 /* ============================================================
    EXPORT EXCEL — Name/Roll/Mobile forced to left
