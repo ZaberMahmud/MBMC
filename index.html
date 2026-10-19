@@ -543,10 +543,57 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 @keyframes slideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ===== NEW: Second header row (day names) in Attendance ===== */
+.table-wrap thead tr:nth-child(2) th{
+  background:var(--primary-light);
+  font-size:10px;
+  font-weight:600;
+  padding:3px 4px;
+  letter-spacing:.3px;
+  opacity:.92;
+  position:sticky;
+  top:34px;
+  z-index:2;
+}
+.table-wrap thead tr:nth-child(2) th.today-col-h{
+  background:var(--accent)!important;
+  color:#000!important;
+  opacity:1;
+}
+.table-wrap thead tr:first-child th{ top:0; }
+
+/* ===== NEW: Sort bar ===== */
+.sort-bar{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+  padding:10px 12px;
+  background:var(--bg);
+  border-radius:12px;
+  border:1px solid var(--border);
+}
+.sort-bar label{
+  font-size:13px;
+  font-weight:600;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.sort-bar select{
+  flex:1;
+  min-width:180px;
+  max-width:320px;
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:600;
+}
+
 @media(max-width:640px){main{padding:12px}.card{padding:14px}.topbar-info h1{font-size:13px}.stat .value{font-size:22px}.wa-banner{flex-direction:column;align-items:stretch}.wa-banner .btn{flex:1}.a11y-fab.open{left:0}}
 
 @media print{
-  .topbar,.tabs,.toolbar,.row-actions,.live-badge,.hero-banner,.a11y-fab,.a11y-panel,.reorder-group{display:none!important}
+  .topbar,.tabs,.toolbar,.row-actions,.live-badge,.hero-banner,.a11y-fab,.a11y-panel,.reorder-group,.sort-bar{display:none!important}
   body{background:#fff;zoom:1}
   .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
 }
@@ -906,7 +953,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
         <p style="font-size:13px;color:var(--muted);line-height:1.7">
           <b>Momtaj Uddin Business Management College</b><br>
           <span data-i18n="about_line1">Modern cloud attendance management app.</span><br>
-          <span data-i18n="about_line2">Version: 7.0 — Full accessibility suite + language toggle.</span><br>
+          <span data-i18n="about_line2">Version: 7.1 — Full accessibility suite + language toggle + sorting.</span><br>
           <span data-i18n="about_line3">Ctrl+Z = Undo</span>
         </p>
       </div>
@@ -1013,7 +1060,7 @@ const TRANSLATIONS = {
     change_pass: '🔑 পরিবর্তন করুন',
     about: 'ℹ️ অ্যাপ সম্পর্কে',
     about_line1: 'আধুনিক ক্লাউড হাজিরা ব্যবস্থাপনা অ্যাপ।',
-    about_line2: 'ভার্সন: ৭.০ — সম্পূর্ণ অ্যাক্সেসিবিলিটি স্যুট + ভাষা টগল।',
+    about_line2: 'ভার্সন: ৭.১ — সম্পূর্ণ অ্যাক্সেসিবিলিটি স্যুট + ভাষা টগল + সর্টিং।',
     about_line3: 'Ctrl+Z = Undo',
     live_sync: 'লাইভ সিঙ্ক'
   },
@@ -1107,7 +1154,7 @@ const TRANSLATIONS = {
     change_pass: '🔑 Change',
     about: 'ℹ️ About',
     about_line1: 'Modern cloud attendance management app.',
-    about_line2: 'Version: 7.0 — Full accessibility suite + language toggle.',
+    about_line2: 'Version: 7.1 — Full accessibility suite + language toggle + sorting.',
     about_line3: 'Ctrl+Z = Undo',
     live_sync: 'Live Sync'
   }
@@ -1360,6 +1407,17 @@ let suppressSnapshot = 0;
 let lastLocalEdit = 0;
 const DEFAULT_PASS = 'admin123';
 
+/* ===== NEW: sorting state ===== */
+let studentsSort = { key:'index', dir:1 };
+let monthlySort  = { key:'index', dir:1 };
+
+/* ===== NEW: day names ===== */
+const DAY_NAMES = {
+  bn: ['রবি','সোম','মঙ্গল','বুধ','বৃহঃ','শুক্র','শনি'],
+  en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+};
+function dayName(d){ return DAY_NAMES[getCurrentLang()==='bn'?'bn':'en'][d]; }
+
 /* ============================================================
    UNDO SYSTEM
    ============================================================ */
@@ -1408,7 +1466,6 @@ async function undoLast(){
       attendance = JSON.parse(JSON.stringify(last.prevOrder.attendance));
       results = JSON.parse(JSON.stringify(last.prevOrder.results));
     }
-    // force immediate save and suppress snapshots
     lastLocalEdit = Date.now();
     suppressSnapshot = Date.now() + 1500;
     if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
@@ -1502,22 +1559,16 @@ function startLiveSync(){
   if (unsubListener) unsubListener();
   unsubListener = window.fbFns.onSnapshot(cloudRef(), (snap)=>{
     if (!snap.exists()) return;
-
-    // Skip snapshot if a local change is in flight or within suppression window
     if (pendingSave || Date.now() < suppressSnapshot) {
       console.log('⏭️ Snapshot ignored (local change pending)');
       return;
     }
-
     const d = snap.data();
-
-    // Ignore stale snapshots (older than our last edit)
     const incoming = d.updatedAt && d.updatedAt.toMillis ? d.updatedAt.toMillis() : 0;
     if (incoming && incoming < lastLocalEdit) {
       console.log('⏭️ Stale snapshot ignored');
       return;
     }
-
     students = d.students || [];
     attendance = d.attendance || {};
     results = d.results || {};
@@ -1743,6 +1794,12 @@ function getGrade(pct){
   return { label:'F', cls:'grade-F' };
 }
 
+function setStudentsSort(val){
+  const [key,dir] = val.split(':');
+  studentsSort = { key, dir: Number(dir) };
+  renderStudents();
+}
+
 function renderStudents(){
   const q = (document.getElementById('searchBox').value||'').toLowerCase().trim();
   const list = document.getElementById('studentList');
@@ -1753,23 +1810,57 @@ function renderStudents(){
   document.getElementById('cPresent').textContent = bn(present);
   document.getElementById('cAbsent').textContent = bn(absent);
 
+  const L = getCurrentLang();
   let filtered = students.map((s,i)=>({...s,_i:i}));
   if (filter==='present') filtered = filtered.filter(s=>today[s._i]!=='A');
   if (filter==='absent')  filtered = filtered.filter(s=>today[s._i]==='A');
   if (q) filtered = filtered.filter(s=> (s.name||'').toLowerCase().includes(q) || (s.roll||'').toLowerCase().includes(q) || (s.mobile||'').toLowerCase().includes(q));
 
+  const collator = new Intl.Collator(L==='bn'?'bn':'en',{numeric:true,sensitivity:'base'});
+  const withStats = filtered.map(s=>({ s, _stats: getStudentStats(s._i) }));
+  withStats.sort((A,B)=>{
+    const a=A.s, b=B.s;
+    let r=0;
+    switch(studentsSort.key){
+      case 'name':    r = collator.compare(a.name||'', b.name||''); break;
+      case 'roll':    r = collator.compare(a.roll||'', b.roll||''); break;
+      case 'pct':     r = A._stats.pct - B._stats.pct; break;
+      case 'present': r = A._stats.p - B._stats.p; break;
+      default:        r = a._i - b._i;
+    }
+    return r * studentsSort.dir;
+  });
+  filtered = withStats.map(x=>x.s);
+
+  const opt = (v,txt)=>`<option value="${v}" ${studentsSort.key+':'+studentsSort.dir===v?'selected':''}>${txt}</option>`;
+  const sortHtml = `
+    <div class="sort-bar">
+      <label>🔀 ${L==='bn'?'সাজান':'Sort'}:</label>
+      <select onchange="setStudentsSort(this.value)">
+        ${opt('index:1', L==='bn'?'ডিফল্ট ক্রম':'Default order')}
+        ${opt('name:1',  L==='bn'?'নাম A → Z':'Name A → Z')}
+        ${opt('name:-1', L==='bn'?'নাম Z → A':'Name Z → A')}
+        ${opt('roll:1',  L==='bn'?'রোল ↑ ছোট→বড়':'Roll ↑ Small→Big')}
+        ${opt('roll:-1', L==='bn'?'রোল ↓ বড়→ছোট':'Roll ↓ Big→Small')}
+        ${opt('present:1',  L==='bn'?'উপস্থিতি ↑ কম→বেশি':'Present ↑ Low→High')}
+        ${opt('present:-1', L==='bn'?'উপস্থিতি ↓ বেশি→কম':'Present ↓ High→Low')}
+        ${opt('pct:1',  L==='bn'?'শতাংশ ↑ কম→বেশি':'Percent ↑ Low→High')}
+        ${opt('pct:-1', L==='bn'?'শতাংশ ↓ বেশি→কম':'Percent ↓ High→Low')}
+      </select>
+    </div>`;
+
   if (!filtered.length){
-    list.innerHTML = `<div class="empty"><div class="icon">👥</div><p>${getCurrentLang()==='bn'?'কোনো শিক্ষার্থী নেই':'No students'}</p></div>`;
+    list.innerHTML = sortHtml + `<div class="empty"><div class="icon">👥</div><p>${L==='bn'?'কোনো শিক্ষার্থী নেই':'No students'}</p></div>`;
     return;
   }
 
-  const showReorder = (filter === 'all' && !q);
+  const showReorder = (filter === 'all' && !q && studentsSort.key === 'index' && studentsSort.dir === 1);
 
-  list.innerHTML = filtered.map(s=>{
+  list.innerHTML = sortHtml + filtered.map(s=>{
     const isAbsent = today[s._i]==='A';
     const stats = getStudentStats(s._i);
     const grade = getGrade(stats.pct);
-    const rollLabel = getCurrentLang()==='bn' ? 'রোল' : 'Roll';
+    const rollLabel = L==='bn' ? 'রোল' : 'Roll';
     const canUp = showReorder && s._i > 0;
     const canDown = showReorder && s._i < students.length - 1;
     const reorderHtml = showReorder ? `
@@ -2171,7 +2262,7 @@ function deleteStudent(i){
 }
 
 /* ============================================================
-   MONTHLY (HAZIRA) — with Mobile column
+   MONTHLY (HAZIRA) — with Mobile column + Day names + Sort
    ============================================================ */
 function initMonthly(){
   const sel = document.getElementById('monthSelect');
@@ -2184,6 +2275,12 @@ function initMonthly(){
     opts.push(`<option value="${k}">${label}</option>`);
   }
   sel.innerHTML = opts.join('');
+  renderMonthly();
+}
+
+function setMonthlySort(val){
+  const [key,dir] = val.split(':');
+  monthlySort = { key, dir: Number(dir) };
   renderMonthly();
 }
 
@@ -2201,23 +2298,72 @@ function renderMonthly(){
   const today = new Date();
   const isCurrentMonth = (today.getFullYear()===y && today.getMonth()+1===m);
 
-  const nameLabel = L==='bn' ? 'নাম' : 'Name';
-  const rollLabel = L==='bn' ? 'রোল' : 'Roll';
+  const nameLabel   = L==='bn' ? 'নাম' : 'Name';
+  const rollLabel   = L==='bn' ? 'রোল' : 'Roll';
   const mobileLabel = L==='bn' ? '📱 মোবাইল' : '📱 Mobile';
-  const totalLabel = L==='bn' ? '📊 মোট' : '📊 Total';
+  const totalLabel  = L==='bn' ? '📊 মোট' : '📊 Total';
 
-  let h = `<table><thead><tr>
-    <th style="position:sticky;left:0;z-index:3;background:var(--primary)">${nameLabel}</th>
-    <th>${rollLabel}</th>
-    <th>${mobileLabel}</th>`;
+  // Compute row stats (index preserved)
+  let rows = students.map((s,i)=>{
+    let p=0, a=0;
+    for (let d=1; d<=days; d++){
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i] || '';
+      if (st==='P') p++; if (st==='A') a++;
+    }
+    const tot = p+a;
+    const pct = tot ? Math.round(p/tot*100) : 0;
+    return { s, i, p, a, pct };
+  });
+
+  const collator = new Intl.Collator(L==='bn'?'bn':'en',{numeric:true,sensitivity:'base'});
+  const cmp = (A,B)=>{
+    switch(monthlySort.key){
+      case 'name':    return collator.compare(A.s.name||'', B.s.name||'');
+      case 'roll':    return collator.compare(A.s.roll||'', B.s.roll||'');
+      case 'present': return A.p - B.p;
+      case 'pct':     return A.pct - B.pct;
+      default:        return A.i - B.i;
+    }
+  };
+  rows.sort((A,B)=> cmp(A,B) * monthlySort.dir);
+
+  const opt = (v,txt)=>`<option value="${v}" ${monthlySort.key+':'+monthlySort.dir===v?'selected':''}>${txt}</option>`;
+  const sortHtml = `
+    <div class="sort-bar">
+      <label>🔀 ${L==='bn'?'সাজান':'Sort'}:</label>
+      <select onchange="setMonthlySort(this.value)">
+        ${opt('index:1', L==='bn'?'ডিফল্ট ক্রম':'Default order')}
+        ${opt('name:1',  L==='bn'?'নাম A → Z':'Name A → Z')}
+        ${opt('name:-1', L==='bn'?'নাম Z → A':'Name Z → A')}
+        ${opt('roll:1',  L==='bn'?'রোল ↑ ছোট→বড়':'Roll ↑ Small→Big')}
+        ${opt('roll:-1', L==='bn'?'রোল ↓ বড়→ছোট':'Roll ↓ Big→Small')}
+        ${opt('present:1',  L==='bn'?'উপস্থিতি ↑ কম→বেশি':'Present ↑ Low→High')}
+        ${opt('present:-1', L==='bn'?'উপস্থিতি ↓ বেশি→কম':'Present ↓ High→Low')}
+        ${opt('pct:1',  L==='bn'?'শতাংশ ↑ কম→বেশি':'Percent ↑ Low→High')}
+        ${opt('pct:-1', L==='bn'?'শতাংশ ↓ বেশি→কম':'Percent ↓ High→Low')}
+      </select>
+    </div>`;
+
+  // Two-row header: dates on top, day names on bottom
+  let h = `<table><thead>
+    <tr>
+      <th style="position:sticky;left:0;z-index:3;background:var(--primary)" rowspan="2">${nameLabel}</th>
+      <th rowspan="2">${rollLabel}</th>
+      <th rowspan="2">${mobileLabel}</th>`;
   for (let d=1; d<=days; d++){
     const isToday = isCurrentMonth && today.getDate()===d;
     h += `<th class="${isToday?'today-col-h':''}">${bn(d)}</th>`;
   }
-  h += '<th style="background:var(--success)">P</th><th style="background:var(--danger)">A</th><th style="background:var(--accent);color:#000">%</th></tr></thead><tbody>';
+  h += `<th style="background:var(--success)" rowspan="2">P</th><th style="background:var(--danger)" rowspan="2">A</th><th style="background:var(--accent);color:#000" rowspan="2">%</th></tr><tr>`;
+  for (let d=1; d<=days; d++){
+    const wd = new Date(y, m-1, d).getDay();
+    const isToday = isCurrentMonth && today.getDate()===d;
+    h += `<th class="${isToday?'today-col-h':''}">${dayName(wd)}</th>`;
+  }
+  h += `</tr></thead><tbody>`;
 
-  students.forEach((s,i)=>{
-    let p=0, a=0;
+  rows.forEach(r=>{
+    const s = r.s, i = r.i;
     h += `<tr>
       <td class="name-col">${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.roll||'-')}</td>
@@ -2225,15 +2371,12 @@ function renderMonthly(){
     for (let d=1; d<=days; d++){
       const k = y+'-'+m+'-'+d;
       const st = (attendance[k]||{})[i] || '';
-      if (st==='P') p++; if (st==='A') a++;
       const isToday = isCurrentMonth && today.getDate()===d;
       const cls = st==='P' ? 'cell-P' : st==='A' ? 'cell-A' : 'cell-empty';
       const sym = st==='P' ? '✓' : st==='A' ? '✗' : '-';
       h += `<td class="${cls} ${isToday?'today-col':''}" onclick="toggleMonthCell('${k}',${i})">${sym}</td>`;
     }
-    const total = p+a;
-    const pct = total?Math.round(p/total*100):0;
-    h += `<td><b>${bn(p)}</b></td><td><b>${bn(a)}</b></td><td><b>${bn(pct)}%</b></td></tr>`;
+    h += `<td><b>${bn(r.p)}</b></td><td><b>${bn(r.a)}</b></td><td><b>${bn(r.pct)}%</b></td></tr>`;
   });
 
   h += `<tr class="totals-row"><td class="name-col">${totalLabel}</td><td>-</td><td>-</td>`;
@@ -2246,7 +2389,7 @@ function renderMonthly(){
   }
   h += '<td colspan="3">-</td></tr>';
   h += '</tbody></table>';
-  document.getElementById('monthlyTable').innerHTML = h;
+  document.getElementById('monthlyTable').innerHTML = sortHtml + h;
 }
 
 function toggleMonthCell(k,i){
@@ -2361,7 +2504,6 @@ function clearCell(dateKey, idx){
   toast(getCurrentLang()==='bn' ? '🧽 সেল খালি হয়েছে' : '🧽 Cell cleared', 'success');
 }
 
-// Right-click on any cell
 document.addEventListener('contextmenu', (e)=>{
   const cell = e.target.closest('#monthlyTable td');
   if (!cell) return;
@@ -2376,7 +2518,6 @@ document.addEventListener('contextmenu', (e)=>{
   clearCell(match[1], Number(match[2]));
 });
 
-// Long-press for mobile (600 ms)
 let longPressTimer = null;
 document.addEventListener('touchstart', (e)=>{
   const cell = e.target.closest('#monthlyTable td');
@@ -2415,7 +2556,10 @@ function exportMonthly(){
   const totalAKey = L==='bn' ? 'মোট A' : 'Total A';
 
   const header = [nameKey, rollKey, mobileKey];
-  for (let d=1; d<=days; d++) header.push(String(d));
+  for (let d=1; d<=days; d++){
+    const wd = new Date(y,m-1,d).getDay();
+    header.push(String(d) + ' (' + dayName(wd) + ')');
+  }
   header.push(totalPKey, totalAKey);
 
   const rows = students.map((s,i)=>{
@@ -2426,7 +2570,8 @@ function exportMonthly(){
     let p=0, a=0;
     for (let d=1; d<=days; d++){
       const st = (attendance[y+'-'+m+'-'+d]||{})[i] || '';
-      row[String(d)] = st === 'P' ? '✓' : st === 'A' ? '✗' : '';
+      const wd = new Date(y,m-1,d).getDay();
+      row[String(d) + ' (' + dayName(wd) + ')'] = st === 'P' ? '✓' : st === 'A' ? '✗' : '';
       if (st==='P') p++;
       if (st==='A') a++;
     }
@@ -2441,7 +2586,7 @@ function exportMonthly(){
     { wch: 24 },
     { wch: 10 },
     { wch: 14 },
-    ...Array(days).fill({ wch: 4 }),
+    ...Array(days).fill({ wch: 8 }),
     { wch: 8 },
     { wch: 8 }
   ];
