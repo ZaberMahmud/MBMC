@@ -30,8 +30,8 @@ window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
 <style>
-:root{--primary:#0b3d2e;--primary-light:#16543f;--accent:#f4b400;--accent-2:#ff8c00;--danger:#e63946;--success:#16a34a;--info:#2563eb;--wa:#25D366;--purple:#7c3aed;--bg:#f4f6fb;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--shadow:0 4px 24px rgba(11,61,46,.08);--shadow-lg:0 20px 40px rgba(11,61,46,.15);--a11y-scale:1;--a11y-line:1.5}
-[data-theme="dark"]{--bg:#0a1628;--card:#132135;--text:#e2e8f0;--muted:#94a3b8;--border:#1e3a5f}
+:root{--primary:#0b3d2e;--primary-light:#16543f;--accent:#f4b400;--accent-2:#ff8c00;--danger:#e63946;--success:#16a34a;--info:#2563eb;--wa:#25D366;--purple:#7c3aed;--bg:#f4f6fb;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--shadow:0 4px 24px rgba(11,61,46,.08);--shadow-lg:0 20px 40px rgba(11,61,46,.15);--a11y-scale:1;--a11y-line:1.5;--holiday:#dc2626;--holiday-bg:#fee2e2;--holiday-bg-dark:#7f1d1d}
+[data-theme="dark"]{--bg:#0a1628;--card:#132135;--text:#e2e8f0;--muted:#94a3b8;--border:#1e3a5f;--holiday-bg:#450a0a;--holiday-bg-dark:#991b1b}
 *{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px}
 body{font-family:'Hind Siliguri',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:var(--a11y-line)}
@@ -55,244 +55,56 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none
 .btn-ghost:disabled{opacity:.5;cursor:not-allowed}
 
 /* ================= ACCESSIBILITY MENU ================= */
-.a11y-fab{
-  position:fixed;
-  left:0;
-  top:50%;
-  transform:translateY(-50%);
-  width:56px;
-  height:56px;
-  border-radius:0 50% 50% 0;
-  background:linear-gradient(135deg,var(--primary),var(--primary-light));
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:26px;
-  box-shadow:4px 4px 20px rgba(0,0,0,.25);
-  z-index:998;
-  cursor:pointer;
-  transition:all .3s cubic-bezier(.2,.8,.2,1);
-  border:none;
-}
-.a11y-fab:hover{
-  width:64px;
-  padding-left:6px;
-  box-shadow:6px 6px 24px rgba(0,0,0,.35);
-}
-.a11y-fab::after{
-  content:'';
-  position:absolute;
-  inset:-4px;
-  border-radius:50%;
-  border:2px solid var(--accent);
-  opacity:.5;
-  animation:pulseGlow 2.5s infinite;
-  pointer-events:none;
-}
-.a11y-fab.open{
-  left:320px;
-  transform:translateY(-50%) scale(.95);
-}
-
-.a11y-panel{
-  position:fixed;
-  top:0;
-  left:0;
-  width:340px;
-  max-width:85vw;
-  height:100vh;
-  background:linear-gradient(180deg,#dc2626 0%,#b91c1c 100%);
-  color:#fff;
-  z-index:999;
-  padding:22px 18px 30px;
-  overflow-y:auto;
-  transform:translateX(-100%);
-  transition:transform .35s cubic-bezier(.2,.8,.2,1);
-  box-shadow:8px 0 30px rgba(0,0,0,.3);
-}
+.a11y-fab{position:fixed;left:0;top:50%;transform:translateY(-50%);width:56px;height:56px;border-radius:0 50% 50% 0;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:4px 4px 20px rgba(0,0,0,.25);z-index:998;cursor:pointer;transition:all .3s cubic-bezier(.2,.8,.2,1);border:none}
+.a11y-fab:hover{width:64px;padding-left:6px;box-shadow:6px 6px 24px rgba(0,0,0,.35)}
+.a11y-fab::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--accent);opacity:.5;animation:pulseGlow 2.5s infinite;pointer-events:none}
+.a11y-fab.open{left:320px;transform:translateY(-50%) scale(.95)}
+.a11y-panel{position:fixed;top:0;left:0;width:340px;max-width:85vw;height:100vh;background:linear-gradient(180deg,#dc2626 0%,#b91c1c 100%);color:#fff;z-index:999;padding:22px 18px 30px;overflow-y:auto;transform:translateX(-100%);transition:transform .35s cubic-bezier(.2,.8,.2,1);box-shadow:8px 0 30px rgba(0,0,0,.3)}
 .a11y-panel.open{transform:translateX(0)}
 .a11y-panel::-webkit-scrollbar{width:6px}
 .a11y-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
-
-.a11y-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding-bottom:16px;
-  border-bottom:1.5px solid rgba(255,255,255,.25);
-  margin-bottom:16px;
-}
-.a11y-header h2{
-  font-size:20px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.a11y-close{
-  background:rgba(255,255,255,.15);
-  color:#fff;
-  width:36px;
-  height:36px;
-  border-radius:50%;
-  font-size:20px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:background .2s;
-}
+.a11y-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1.5px solid rgba(255,255,255,.25);margin-bottom:16px}
+.a11y-header h2{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
+.a11y-close{background:rgba(255,255,255,.15);color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s}
 .a11y-close:hover{background:rgba(255,255,255,.3)}
-
-.a11y-section-title{
-  font-size:11px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  opacity:.7;
-  margin:16px 0 6px 12px;
-  padding-top:10px;
-  border-top:1px solid rgba(255,255,255,.15);
-}
+.a11y-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.7;margin:16px 0 6px 12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15)}
 .a11y-section-title:first-of-type{border-top:none;padding-top:0;margin-top:0}
-
-.a11y-item{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:12px 12px;
-  border-radius:10px;
-  cursor:pointer;
-  font-size:15px;
-  font-weight:600;
-  transition:background .2s;
-  user-select:none;
-  position:relative;
-}
+.a11y-item{display:flex;align-items:center;gap:12px;padding:12px 12px;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;transition:background .2s;user-select:none;position:relative}
 .a11y-item:hover{background:rgba(255,255,255,.15)}
 .a11y-item:active{background:rgba(255,255,255,.25)}
-.a11y-item .icon{
-  font-size:20px;
-  width:28px;
-  text-align:center;
-  flex-shrink:0;
-}
+.a11y-item .icon{font-size:20px;width:28px;text-align:center;flex-shrink:0}
 .a11y-item .label{flex:1}
-.a11y-item .switch{
-  width:36px;
-  height:20px;
-  border-radius:12px;
-  background:rgba(255,255,255,.25);
-  position:relative;
-  transition:background .25s;
-  flex-shrink:0;
-}
-.a11y-item .switch::after{
-  content:'';
-  position:absolute;
-  top:2px;
-  left:2px;
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  background:#fff;
-  transition:transform .25s;
-  box-shadow:0 1px 3px rgba(0,0,0,.3);
-}
+.a11y-item .switch{width:36px;height:20px;border-radius:12px;background:rgba(255,255,255,.25);position:relative;transition:background .25s;flex-shrink:0}
+.a11y-item .switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .a11y-item.active .switch{background:#fff}
 .a11y-item.active .switch::after{transform:translateX(16px);background:#dc2626}
-.a11y-item .stepper{
-  display:flex;
-  gap:4px;
-  align-items:center;
-}
-.a11y-item .stepper button{
-  width:26px;
-  height:26px;
-  border-radius:50%;
-  background:rgba(255,255,255,.2);
-  color:#fff;
-  font-size:14px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:background .2s;
-}
+.a11y-item .stepper{display:flex;gap:4px;align-items:center}
+.a11y-item .stepper button{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s}
 .a11y-item .stepper button:hover{background:rgba(255,255,255,.4)}
-
-.a11y-item.reset .icon{
-  animation:spin 1s linear infinite;
-  animation-play-state:paused;
-}
+.a11y-item.reset .icon{animation:spin 1s linear infinite;animation-play-state:paused}
 .a11y-item.reset:active .icon{animation-play-state:running}
-
-/* Language selector pill */
-.a11y-lang-pills{
-  display:flex;
-  gap:6px;
-  flex-shrink:0;
-}
-.a11y-lang-pills button{
-  padding:5px 12px;
-  border-radius:20px;
-  background:rgba(255,255,255,.2);
-  color:#fff;
-  font-size:12px;
-  font-weight:700;
-  cursor:pointer;
-  transition:all .2s;
-  border:1.5px solid transparent;
-}
+.a11y-lang-pills{display:flex;gap:6px;flex-shrink:0}
+.a11y-lang-pills button{padding:5px 12px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;border:1.5px solid transparent}
 .a11y-lang-pills button:hover{background:rgba(255,255,255,.35)}
-.a11y-lang-pills button.active{
-  background:#fff;
-  color:#dc2626;
-}
-
-/* ================= BODY ACCESSIBILITY STATES ================= */
+.a11y-lang-pills button.active{background:#fff;color:#dc2626}
 body.a11y-grayscale{filter:grayscale(1)}
 body.a11y-grayscale .a11y-panel,
 body.a11y-grayscale .a11y-fab{filter:none}
-
 body.a11y-contrast{filter:contrast(1.4) saturate(1.3)}
 body.a11y-contrast .a11y-panel,
 body.a11y-contrast .a11y-fab{filter:none}
-
 body.a11y-negative{filter:invert(1) hue-rotate(180deg)}
 body.a11y-negative img,
 body.a11y-negative .a11y-panel,
 body.a11y-negative .a11y-fab{filter:invert(1) hue-rotate(180deg)}
-
-body.a11y-light-bg{
-  --bg:#ffffff!important;
-  --card:#f8fafc!important;
-  --text:#0f172a!important;
-  --border:#cbd5e1!important;
-}
-body.a11y-light-bg[data-theme="dark"]{
-  --bg:#ffffff!important;
-  --card:#f8fafc!important;
-  --text:#0f172a!important;
-  --border:#cbd5e1!important;
-}
+body.a11y-light-bg{--bg:#ffffff!important;--card:#f8fafc!important;--text:#0f172a!important;--border:#cbd5e1!important}
+body.a11y-light-bg[data-theme="dark"]{--bg:#ffffff!important;--card:#f8fafc!important;--text:#0f172a!important;--border:#cbd5e1!important}
 [data-theme="dark"] body.a11y-light-bg{--bg:#fff!important;--card:#f8fafc!important;--text:#0f172a!important}
-
 body.a11y-underline a,
 body.a11y-underline a:visited{text-decoration:underline!important;text-underline-offset:3px}
-body.a11y-underline button:not(.icon-btn):not(.tab):not(.a11y-close):not(.a11y-item):not(.stepper button){
-  text-decoration:underline;
-  text-underline-offset:3px;
-}
-
+body.a11y-underline button:not(.icon-btn):not(.tab):not(.a11y-close):not(.a11y-item):not(.stepper button){text-decoration:underline;text-underline-offset:3px}
 body.a11y-readable,
-body.a11y-readable *{
-  font-family:'Comic Sans MS','Segoe UI',system-ui,sans-serif!important;
-  letter-spacing:.5px!important;
-}
-
+body.a11y-readable *{font-family:'Comic Sans MS','Segoe UI',system-ui,sans-serif!important;letter-spacing:.5px!important}
 body.a11y-protanopia{filter:url('#protanopia-filter')}
 body.a11y-deuteranopia{filter:url('#deuteranopia-filter')}
 body.a11y-tritanopia{filter:url('#tritanopia-filter')}
@@ -405,29 +217,9 @@ main{padding:16px;max-width:1100px;margin:0 auto;width:100%;flex:1}
 .grade-D{background:#fed7aa;color:#9a3412}
 .grade-F{background:#fecaca;color:#991b1b}
 
-/* ================= REORDER BUTTONS ================= */
 .reorder-group{display:flex;flex-direction:column;gap:2px;margin-right:2px}
-.reorder-btn{
-  background:var(--bg);
-  color:var(--muted);
-  border:1.5px solid var(--border);
-  width:28px;
-  height:20px;
-  border-radius:6px;
-  font-size:11px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:all .15s;
-  padding:0;
-  line-height:1;
-}
-.reorder-btn:hover:not(:disabled){
-  background:var(--primary);
-  color:#fff;
-  border-color:var(--primary);
-}
+.reorder-btn{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);width:28px;height:20px;border-radius:6px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;padding:0;line-height:1}
+.reorder-btn:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary)}
 .reorder-btn:disabled{opacity:.3;cursor:not-allowed}
 
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -450,6 +242,31 @@ td.mobile-col{font-size:11px;color:var(--muted);text-align:left}
 .today-col{background:rgba(244,180,0,.15)!important;font-weight:700}
 .today-col-h{background:var(--accent)!important;color:#000!important}
 tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
+
+/* ===== NEW: HOLIDAY (Friday/Saturday) styling ===== */
+.holiday-col-h{
+  background:var(--holiday)!important;
+  color:#fff!important;
+}
+.holiday-col-h::after{content:' 🔒';font-size:10px;opacity:.9}
+.holiday-cell{
+  background:repeating-linear-gradient(45deg,var(--holiday-bg),var(--holiday-bg) 6px,rgba(220,38,38,.18) 6px,rgba(220,38,38,.18) 12px)!important;
+  color:var(--holiday)!important;
+  cursor:not-allowed!important;
+  opacity:.85;
+  font-weight:700;
+}
+.holiday-cell:hover{background:repeating-linear-gradient(45deg,var(--holiday-bg),var(--holiday-bg) 6px,rgba(220,38,38,.25) 6px,rgba(220,38,38,.25) 12px)!important}
+.holiday-cell .lock-icon{font-size:10px;opacity:.7;display:block;line-height:1}
+.holiday-legend{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:20px;
+  background:rgba(220,38,38,.12);
+  color:var(--holiday);font-weight:700;font-size:12px;
+}
+.holiday-today{
+  box-shadow:inset 0 0 0 2px var(--accent);
+}
 
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px;padding:10px;background:var(--bg);border-radius:10px}
 .legend span b{display:inline-block;margin-right:4px}
@@ -520,6 +337,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 .heat-cell.l4{background:#22c55e}
 .heat-cell.l5{background:#16a34a}
 .heat-cell.today{outline:2px solid var(--accent);outline-offset:1px}
+.heat-cell.holiday{background:repeating-linear-gradient(45deg,var(--holiday-bg),var(--holiday-bg) 4px,rgba(220,38,38,.22) 4px,rgba(220,38,38,.22) 8px);outline:1px dashed var(--holiday)}
 .heat-legend{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
 .heat-legend span{width:14px;height:14px;border-radius:3px;display:inline-block}
 
@@ -543,7 +361,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
 @keyframes slideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ===== NEW: Second header row (day names) in Attendance ===== */
+/* ===== Second header row (day names) ===== */
 .table-wrap thead tr:nth-child(2) th{
   background:var(--primary-light);
   font-size:10px;
@@ -560,9 +378,14 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
   color:#000!important;
   opacity:1;
 }
+.table-wrap thead tr:nth-child(2) th.holiday-col-h{
+  background:var(--holiday)!important;
+  color:#fff!important;
+  opacity:1;
+}
 .table-wrap thead tr:first-child th{ top:0; }
 
-/* ===== NEW: Sort bar ===== */
+/* ===== Sort bar ===== */
 .sort-bar{
   display:flex;
   gap:8px;
@@ -608,7 +431,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
       <feColorMatrix type="matrix" values="0.567 0.433 0 0 0 0.558 0.442 0 0 0 0 0.242 0.758 0 0 0 0 0 1 0"/>
     </filter>
     <filter id="deuteranopia-filter">
-      <feColorMatrix type="matrix" values="0.625 0.375 0 0 0 0.7 0.3 0 0 0 0 0.3 0.7 0 0 0 0 0 1 0"/>
+      <feColorMatrix type="matrix" values="0.625 0.375 0  ‍0 0 0.7 0.3 0 0 0 0 0.3 0.7 0 0 0 0 0 1 0"/>
     </filter>
     <filter id="tritanopia-filter">
       <feColorMatrix type="matrix" values="0.95 0.05 0 0 0 0 0.433 0.567 0 0 0 0.475 0.525 0 0 0 0 0 1 0"/>
@@ -866,6 +689,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
           <span><b style="color:var(--success)">✓</b> <span data-i18n="present">Present</span></span>
           <span><b style="color:var(--danger)">✗</b> <span data-i18n="absent">Absent</span></span>
           <span><b style="color:var(--muted)">-</b> <span data-i18n="unmarked">Unmarked</span></span>
+          <span class="holiday-legend">🔒 <span data-i18n="holiday">Holiday (Fri/Sat)</span></span>
           <span data-i18n="click_hint">💡 Click cell to toggle (Ctrl+Z = Undo)</span>
           <span>🖱️ <span data-i18n="right_click_hint">Right-click cell = clear</span></span>
         </div>
@@ -903,6 +727,8 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
           <span style="background:#22c55e"></span>
           <span style="background:#16a34a"></span>
           <span data-i18n="more">More</span>
+          <span style="background:repeating-linear-gradient(45deg,var(--holiday-bg),var(--holiday-bg) 4px,rgba(220,38,38,.22) 4px,rgba(220,38,38,.22) 8px);outline:1px dashed var(--holiday)"></span>
+          <span data-i18n="holiday">Holiday (Fri/Sat)</span>
         </div>
       </div>
     </section>
@@ -953,7 +779,7 @@ tr.totals-row td{background:rgba(11,61,46,.08);font-weight:700}
         <p style="font-size:13px;color:var(--muted);line-height:1.7">
           <b>Momtaj Uddin Business Management College</b><br>
           <span data-i18n="about_line1">Modern cloud attendance management app.</span><br>
-          <span data-i18n="about_line2">Version: 7.1 — Full accessibility suite + language toggle + sorting.</span><br>
+          <span data-i18n="about_line2">Version: 7.2 — Friday & Saturday are locked as holidays.</span><br>
           <span data-i18n="about_line3">Ctrl+Z = Undo</span>
         </p>
       </div>
@@ -1060,9 +886,12 @@ const TRANSLATIONS = {
     change_pass: '🔑 পরিবর্তন করুন',
     about: 'ℹ️ অ্যাপ সম্পর্কে',
     about_line1: 'আধুনিক ক্লাউড হাজিরা ব্যবস্থাপনা অ্যাপ।',
-    about_line2: 'ভার্সন: ৭.১ — সম্পূর্ণ অ্যাক্সেসিবিলিটি স্যুট + ভাষা টগল + সর্টিং।',
+    about_line2: 'ভার্সন: ৭.২ — শুক্র ও শনি বার হাজিরা লক।',
     about_line3: 'Ctrl+Z = Undo',
-    live_sync: 'লাইভ সিঙ্ক'
+    live_sync: 'লাইভ সিঙ্ক',
+    holiday: 'সাপ্তাহিক ছুটি (শুক্র/শনি)',
+    holiday_locked: '🔒 ছুটির দিন — হাজিরা দেওয়া যাবে না',
+    holiday_today: 'আজ ছুটি'
   },
   en: {
     a11y_title: 'Accessibility',
@@ -1154,9 +983,12 @@ const TRANSLATIONS = {
     change_pass: '🔑 Change',
     about: 'ℹ️ About',
     about_line1: 'Modern cloud attendance management app.',
-    about_line2: 'Version: 7.1 — Full accessibility suite + language toggle + sorting.',
+    about_line2: 'Version: 7.2 — Friday & Saturday are locked as holidays.',
     about_line3: 'Ctrl+Z = Undo',
-    live_sync: 'Live Sync'
+    live_sync: 'Live Sync',
+    holiday: 'Holiday (Fri/Sat)',
+    holiday_locked: '🔒 Holiday — attendance not allowed',
+    holiday_today: 'Holiday today'
   }
 };
 
@@ -1417,6 +1249,25 @@ const DAY_NAMES = {
   en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 };
 function dayName(d){ return DAY_NAMES[getCurrentLang()==='bn'?'bn':'en'][d]; }
+
+/* ============================================================
+   HOLIDAY LOGIC (Friday = 5, Saturday = 6 in JS getDay)
+   ============================================================ */
+const HOLIDAY_DAYS = [5, 6]; // Friday, Saturday
+
+function isHolidayDate(y, m, d){
+  const wd = new Date(y, m-1, d).getDay();
+  return HOLIDAY_DAYS.includes(wd);
+}
+function isHolidayKey(key){
+  if (!key) return false;
+  const parts = key.split('-').map(Number);
+  if (parts.length < 3) return false;
+  return isHolidayDate(parts[0], parts[1], parts[2]);
+}
+function isTodayHoliday(){
+  return HOLIDAY_DAYS.includes(new Date().getDay());
+}
 
 /* ============================================================
    UNDO SYSTEM
@@ -2140,7 +1991,7 @@ function printReportCard(){
 }
 
 /* ============================================================
-   HEATMAP
+   HEATMAP (with holiday styling)
    ============================================================ */
 function renderHeatmap(){
   const sel = document.getElementById('monthSelect');
@@ -2168,14 +2019,21 @@ function renderHeatmap(){
     let p=0;
     students.forEach((_,i)=>{ if (rec[i]==='P') p++; });
     const pct = students.length ? p/students.length : 0;
+    const holiday = isHolidayDate(y,m,d);
     let level = 0;
-    if (pct > 0.9) level = 5;
-    else if (pct > 0.75) level = 4;
-    else if (pct > 0.5) level = 3;
-    else if (pct > 0.25) level = 2;
-    else if (pct > 0) level = 1;
+    if (!holiday){
+      if (pct > 0.9) level = 5;
+      else if (pct > 0.75) level = 4;
+      else if (pct > 0.5) level = 3;
+      else if (pct > 0.25) level = 2;
+      else if (pct > 0) level = 1;
+    }
     const isToday = y===new Date().getFullYear() && m===new Date().getMonth()+1 && d===new Date().getDate();
-    html += `<div class="heat-cell l${level} ${isToday?'today':''}" title="${bn(d)} — ${bn(p)}/${bn(students.length)} (${bn(Math.round(pct*100))}%)"></div>`;
+    const cls = holiday ? 'holiday' : ('l'+level);
+    const title = holiday
+      ? `${bn(d)} — ${t('holiday')}`
+      : `${bn(d)} — ${bn(p)}/${bn(students.length)} (${bn(Math.round(pct*100))}%)`;
+    html += `<div class="heat-cell ${cls} ${isToday?'today':''}" title="${title}"></div>`;
   }
   grid.innerHTML = html;
 }
@@ -2262,7 +2120,7 @@ function deleteStudent(i){
 }
 
 /* ============================================================
-   MONTHLY (HAZIRA) — with Mobile column + Day names + Sort
+   MONTHLY (HAZIRA) — with Mobile column + Day names + Sort + HOLIDAY LOCK
    ============================================================ */
 function initMonthly(){
   const sel = document.getElementById('monthSelect');
@@ -2303,10 +2161,11 @@ function renderMonthly(){
   const mobileLabel = L==='bn' ? '📱 মোবাইল' : '📱 Mobile';
   const totalLabel  = L==='bn' ? '📊 মোট' : '📊 Total';
 
-  // Compute row stats (index preserved)
+  // Compute row stats (index preserved) — skip holidays
   let rows = students.map((s,i)=>{
     let p=0, a=0;
     for (let d=1; d<=days; d++){
+      if (isHolidayDate(y,m,d)) continue; // skip holidays
       const st = (attendance[y+'-'+m+'-'+d]||{})[i] || '';
       if (st==='P') p++; if (st==='A') a++;
     }
@@ -2344,7 +2203,7 @@ function renderMonthly(){
       </select>
     </div>`;
 
-  // Two-row header: dates on top, day names on bottom
+  // Two-row header: dates on top, day names on bottom; holiday columns are red
   let h = `<table><thead>
     <tr>
       <th style="position:sticky;left:0;z-index:3;background:var(--primary)" rowspan="2">${nameLabel}</th>
@@ -2352,13 +2211,17 @@ function renderMonthly(){
       <th rowspan="2">${mobileLabel}</th>`;
   for (let d=1; d<=days; d++){
     const isToday = isCurrentMonth && today.getDate()===d;
-    h += `<th class="${isToday?'today-col-h':''}">${bn(d)}</th>`;
+    const holiday = isHolidayDate(y,m,d);
+    const cls = [isToday?'today-col-h':'', holiday?'holiday-col-h':''].filter(Boolean).join(' ');
+    h += `<th class="${cls}" title="${holiday?t('holiday'):''}">${bn(d)}</th>`;
   }
   h += `<th style="background:var(--success)" rowspan="2">P</th><th style="background:var(--danger)" rowspan="2">A</th><th style="background:var(--accent);color:#000" rowspan="2">%</th></tr><tr>`;
   for (let d=1; d<=days; d++){
     const wd = new Date(y, m-1, d).getDay();
     const isToday = isCurrentMonth && today.getDate()===d;
-    h += `<th class="${isToday?'today-col-h':''}">${dayName(wd)}</th>`;
+    const holiday = isHolidayDate(y,m,d);
+    const cls = [isToday?'today-col-h':'', holiday?'holiday-col-h':''].filter(Boolean).join(' ');
+    h += `<th class="${cls}">${dayName(wd)}</th>`;
   }
   h += `</tr></thead><tbody>`;
 
@@ -2370,11 +2233,22 @@ function renderMonthly(){
       <td class="mobile-col">${escapeHtml(s.mobile||'-')}</td>`;
     for (let d=1; d<=days; d++){
       const k = y+'-'+m+'-'+d;
+      const holiday = isHolidayDate(y,m,d);
       const st = (attendance[k]||{})[i] || '';
       const isToday = isCurrentMonth && today.getDate()===d;
-      const cls = st==='P' ? 'cell-P' : st==='A' ? 'cell-A' : 'cell-empty';
-      const sym = st==='P' ? '✓' : st==='A' ? '✗' : '-';
-      h += `<td class="${cls} ${isToday?'today-col':''}" onclick="toggleMonthCell('${k}',${i})">${sym}</td>`;
+
+      if (holiday){
+        // Locked holiday cell
+        h += `<td class="holiday-cell ${isToday?'holiday-today':''}"
+                 title="${t('holiday_locked')}"
+                 onclick="blockHolidayClick()">
+                 <span class="lock-icon">🔒</span>
+               </td>`;
+      } else {
+        const cls = st==='P' ? 'cell-P' : st==='A' ? 'cell-A' : 'cell-empty';
+        const sym = st==='P' ? '✓' : st==='A' ? '✗' : '-';
+        h += `<td class="${cls} ${isToday?'today-col':''}" onclick="toggleMonthCell('${k}',${i})">${sym}</td>`;
+      }
     }
     h += `<td><b>${bn(r.p)}</b></td><td><b>${bn(r.a)}</b></td><td><b>${bn(r.pct)}%</b></td></tr>`;
   });
@@ -2382,6 +2256,11 @@ function renderMonthly(){
   h += `<tr class="totals-row"><td class="name-col">${totalLabel}</td><td>-</td><td>-</td>`;
   for (let d=1; d<=days; d++){
     const k = y+'-'+m+'-'+d;
+    const holiday = isHolidayDate(y,m,d);
+    if (holiday){
+      h += `<td class="holiday-cell">🔒</td>`;
+      continue;
+    }
     const rec = attendance[k] || {};
     let p=0;
     students.forEach((_,i)=>{ if (rec[i]==='P') p++; });
@@ -2392,7 +2271,16 @@ function renderMonthly(){
   document.getElementById('monthlyTable').innerHTML = sortHtml + h;
 }
 
+/* ===== NEW: holiday click blocker ===== */
+function blockHolidayClick(){
+  toast(t('holiday_locked'), 'error');
+}
+
 function toggleMonthCell(k,i){
+  // HOLIDAY LOCK
+  if (isHolidayKey(k)){
+    return toast(t('holiday_locked'), 'error');
+  }
   if (!attendance[k]) attendance[k]={};
   const cur = attendance[k][i];
   pushHistory('cell', k, i, cur);
@@ -2407,6 +2295,8 @@ function toggleMonthCell(k,i){
 }
 
 function checkAllPresentConfetti(){
+  // Skip if today is a holiday
+  if (isTodayHoliday()) return;
   const today = attendance[todayKey()] || {};
   if (!students.length) return;
   let allPresent = true;
@@ -2419,6 +2309,12 @@ function checkAllPresentConfetti(){
 
 function markToday(type){
   const L = getCurrentLang();
+
+  // HOLIDAY LOCK
+  if (isTodayHoliday()){
+    return toast(t('holiday_locked'), 'error');
+  }
+
   const msg = type==='present'
     ? (L==='bn'?'আজকের সব শিক্ষার্থীকে উপস্থিত চিহ্নিত করবেন?':'Mark all students present today?')
     : (L==='bn'?'আজকের সব শিক্ষার্থীকে অনুপস্থিত চিহ্নিত করবেন?':'Mark all students absent today?');
@@ -2438,6 +2334,9 @@ function markToday(type){
    ============================================================ */
 
 function clearDay(dateKey){
+  if (isHolidayKey(dateKey)){
+    return toast(t('holiday_locked'), 'error');
+  }
   if (!attendance[dateKey]) {
     return toast(getCurrentLang()==='bn' ? 'এই দিনে কিছু নেই' : 'Nothing to clear', 'info');
   }
@@ -2462,8 +2361,8 @@ function clearAllDaysPrompt(){
     <h3>🧹 ${L==='bn' ? 'দিন পরিষ্কার করুন' : 'Clear a Day'}</h3>
     <p style="font-size:13px;color:var(--muted);margin-bottom:10px">
       ${L==='bn'
-        ? 'নিচের তারিখের সব হাজিরা মুছে যাবে (Ctrl+Z দিয়ে ফেরানো যাবে)।'
-        : 'All attendance marks for the selected date will be removed (Ctrl+Z to undo).'}
+        ? 'নিচের তারিখের সব হাজিরা মুছে যাবে (Ctrl+Z দিয়ে ফেরানো যাবে)। শুক্র/শনি বার লক।'
+        : 'All attendance marks for the selected date will be removed (Ctrl+Z to undo). Friday/Saturday are locked.'}
     </p>
     <label>${L==='bn' ? 'তারিখ' : 'Date'}</label>
     <input type="date" id="clearDate" value="${todayK}">
@@ -2489,6 +2388,9 @@ function confirmClearDay(){
 }
 
 function clearCell(dateKey, idx){
+  if (isHolidayKey(dateKey)){
+    return toast(t('holiday_locked'), 'error');
+  }
   if (!attendance[dateKey] || !(idx in attendance[dateKey])) {
     return toast(getCurrentLang()==='bn' ? 'খালি সেল' : 'Cell already empty', 'info');
   }
@@ -2507,6 +2409,10 @@ function clearCell(dateKey, idx){
 document.addEventListener('contextmenu', (e)=>{
   const cell = e.target.closest('#monthlyTable td');
   if (!cell) return;
+  if (cell.classList.contains('holiday-cell')){
+    e.preventDefault();
+    return toast(t('holiday_locked'), 'error');
+  }
   if (!cell.classList.contains('cell-P') &&
       !cell.classList.contains('cell-A') &&
       !cell.classList.contains('cell-empty')) return;
@@ -2522,6 +2428,7 @@ let longPressTimer = null;
 document.addEventListener('touchstart', (e)=>{
   const cell = e.target.closest('#monthlyTable td');
   if (!cell) return;
+  if (cell.classList.contains('holiday-cell')) return;
   const onclickAttr = cell.getAttribute('onclick') || '';
   const match = onclickAttr.match(/toggleMonthCell\('([^']+)',\s*(\d+)\)/);
   if (!match) return;
@@ -2540,7 +2447,7 @@ document.addEventListener('touchmove', ()=>{
 }, {passive:true});
 
 /* ============================================================
-   EXPORT EXCEL
+   EXPORT EXCEL (holiday days marked "Holiday")
    ============================================================ */
 function exportMonthly(){
   const mk = document.getElementById('monthSelect').value;
@@ -2554,6 +2461,7 @@ function exportMonthly(){
   const mobileKey = L==='bn' ? 'মোবাইল' : 'Mobile';
   const totalPKey = L==='bn' ? 'মোট P' : 'Total P';
   const totalAKey = L==='bn' ? 'মোট A' : 'Total A';
+  const holidayLabel = L==='bn' ? 'ছুটি' : 'Holiday';
 
   const header = [nameKey, rollKey, mobileKey];
   for (let d=1; d<=days; d++){
@@ -2569,11 +2477,16 @@ function exportMonthly(){
     row[mobileKey] = s.mobile || '';
     let p=0, a=0;
     for (let d=1; d<=days; d++){
-      const st = (attendance[y+'-'+m+'-'+d]||{})[i] || '';
       const wd = new Date(y,m-1,d).getDay();
-      row[String(d) + ' (' + dayName(wd) + ')'] = st === 'P' ? '✓' : st === 'A' ? '✗' : '';
-      if (st==='P') p++;
-      if (st==='A') a++;
+      const hol = isHolidayDate(y,m,d);
+      const st = (attendance[y+'-'+m+'-'+d]||{})[i] || '';
+      row[String(d) + ' (' + dayName(wd) + ')'] =
+        hol ? holidayLabel :
+        (st === 'P' ? '✓' : st === 'A' ? '✗' : '');
+      if (!hol){
+        if (st==='P') p++;
+        if (st==='A') a++;
+      }
     }
     row[totalPKey] = p;
     row[totalAKey] = a;
@@ -2598,7 +2511,7 @@ function exportMonthly(){
 }
 
 /* ============================================================
-   WHATSAPP SHARE
+   WHATSAPP SHARE (holidays excluded from P/A totals)
    ============================================================ */
 function shareMonthlyWhatsApp(){
   const mk = document.getElementById('monthSelect').value;
@@ -2610,6 +2523,7 @@ function shareMonthlyWhatsApp(){
   students.forEach((s,i)=>{
     let p=0, a=0;
     for (let d=1; d<=days; d++){
+      if (isHolidayDate(y,m,d)) continue;
       const st = (attendance[y+'-'+m+'-'+d]||{})[i]||'';
       if (st==='P') p++; if (st==='A') a++;
     }
